@@ -10,7 +10,7 @@ DeepSeek 的接口与 OpenAI 完全兼容，所以下面用通用的 OpenAI 协�
 环境变量：
     DEEPSEEK_API_KEY   你的 key（千万别提交进 git！）
     DEEPSEEK_BASE_URL  默认 https://api.deepseek.com
-    DEEPSEEK_MODEL     默认 deepseek-chat
+    DEEPSEEK_MODEL     默认 deepseek-v4-flash（更强可设 deepseek-v4-pro）
 """
 from __future__ import annotations
 import os
@@ -28,7 +28,7 @@ class DeepSeekBackend:
                  timeout: float = 60.0):
         self.api_key = api_key or os.environ.get("DEEPSEEK_API_KEY", "")
         self.base_url = (base_url or os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")).rstrip("/")
-        self.model = model or os.environ.get("DEEPSEEK_MODEL", "deepseek-chat")
+        self.model = model or os.environ.get("DEEPSEEK_MODEL", "deepseek-v4-flash")
         if not self.api_key:
             raise RuntimeError("缺少 DEEPSEEK_API_KEY 环境变量")
         self._client = httpx.Client(timeout=timeout)
