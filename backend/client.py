@@ -67,8 +67,29 @@ class DeepSeekBackend:
                 out.append({"role": "assistant", "content": m.get("content") or None,
                             "tool_calls": self._to_openai_tool_calls(m["tool_calls"])})
             else:
-                out.append({"role": role, "content": m.get("content", "")})
+                out.append({"role": role, "content": self._to_openai_content(m.get("content", ""))})
         return out
+
+    @staticmethod
+    def _to_openai_content(content: Any) -> Any:
+        """Translate course/Anthropic image blocks to OpenAI-compatible blocks."""
+        if not isinstance(content, list):
+            return content
+        blocks = []
+        for block in content:
+            if block.get("type") != "image":
+                blocks.append(block)
+                continue
+            source = block.get("source", {})
+            if source.get("type") != "base64":
+                raise ValueError("目前只支持 base64 图片内容块")
+            media_type = source.get("media_type", "image/png")
+            data = source.get("data", "")
+            blocks.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:{media_type};base64,{data}"},
+            })
+        return blocks
 
     @staticmethod
     def _to_openai_tool_calls(calls: list[dict]) -> list[dict]:

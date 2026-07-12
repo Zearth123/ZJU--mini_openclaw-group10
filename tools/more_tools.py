@@ -7,6 +7,7 @@ from __future__ import annotations
 from .base import Tool
 import subprocess
 from pathlib import Path
+from .external import validate_web_url, wrap_external
 
 
 # --- edit：三种策略权衡（整文件重写 / unified diff / search-replace）---
@@ -78,11 +79,19 @@ def _web_fetch(url: str, max_tokens: int = 2000) -> str:
     import httpx
     from markdownify import markdownify as md
     from agent.context import truncate_observation
-    resp = httpx.get(url, timeout=20, follow_redirects=True)
-    resp.raise_for_status()
-    text = md(resp.text)                     # HTML -> markdown
-    return truncate_observation(text, max_chars=max_tokens * 4)    # TODO[Day4] httpx 抓取 -> markdownify 转 markdown -> 截断到预算内
-    raise NotImplementedError("Day5：实现 web_fetch")
+    current_url = url
+    with httpx.Client(timeout=20, follow_redirects=False) as client:
+        for _ in range(6):
+            validate_web_url(current_url)
+            resp = client.get(current_url)
+            if resp.is_redirect:
+                current_url = str(resp.next_request.url)
+                continue
+            resp.raise_for_status()
+            text = md(resp.text)
+            text = truncate_observation(text, max_chars=max_tokens * 4)
+            return wrap_external(text, current_url)
+    raise RuntimeError("web_fetch 重定向次数超过 5 次")
 
 
 # --- task_list（TodoWrite）：自维护待办，提升长任务成功率 ---

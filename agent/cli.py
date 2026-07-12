@@ -42,7 +42,13 @@ def selfcheck() -> int:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="mini-openclaw")
     p.add_argument("task", nargs="?", help="要让 agent 完成的任务（自然语言）")
+    p.add_argument("--image", action="append", default=[], metavar="PATH",
+                   help="随任务发送的图片路径；可重复指定")
     p.add_argument("--selfcheck", action="store_true", help="只做骨架自检")
+    p.add_argument(
+    "--auto-approve",
+    action="store_true",
+    help="自动批准需要确认的工具，仅用于受控实验",)
     args = p.parse_args(argv)
 
     if args.selfcheck or not args.task:
@@ -79,8 +85,8 @@ def main(argv: list[str] | None = None) -> int:
     from skills.loader import load_skills, skills_catalog
     skills = load_skills()
     system = SYSTEM_PROMPT + "\n\n# 可用 Skills（相关时按其流程执行）\n" + skills_catalog(skills)
-    agent = AgentLoop(backend, reg, system)
-    print(agent.run(args.task))
+    agent = AgentLoop(backend, reg, system,auto_approve=args.auto_approve,)
+    print(agent.run(args.task, image_paths=args.image))
     return 0
 
 
