@@ -71,7 +71,19 @@ def build_default_registry() -> ToolRegistry:
         reg.register(t)
     #
     # TODO[Day4] 再加入：
-    from .more_tools import web_fetch_tool, task_list_tool
-    for t in (web_fetch_tool, task_list_tool):
+    from .more_tools import web_fetch_tool
+    reg.register(web_fetch_tool)
+
+    from .planning import todo_write_tool, update_todo_tool
+    for t in (todo_write_tool, update_todo_tool):
+        reg.register(t)
+
+    from .memory import remember_tool
+    reg.register(remember_tool)
+
+    from .activity_budget import calculate_budget_tool
+    from .activity_schedule import build_schedule_tool
+    from .activity_validate import validate_project_tool
+    for t in (calculate_budget_tool, build_schedule_tool, validate_project_tool):
         reg.register(t)
     return reg

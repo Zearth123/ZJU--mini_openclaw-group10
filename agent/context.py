@@ -12,7 +12,6 @@ from typing import Any
 
 
 def estimate_tokens(messages: list[dict[str, Any]]) -> int:
-    # TODO[Day4] 粗估即可（字符数/4 或用 tokenizer 精确数）
     return sum(len(str(m.get("content", ""))) for m in messages) // 4
 
 def _summarize(backend, chunk: list[dict]) -> str:
@@ -69,11 +68,6 @@ def maybe_compact(
         *recent_messages,
     ]
 
-    # TODO[Day4] 实现 compaction：
-    #   1) 保留 system（第0条）
-    #   2) 把中间较早的 user/assistant/tool 摘要成一条 system 备忘（可调后端做摘要）
-    #   3) 保留最近 K 轮原文
-    raise NotImplementedError("Day5：实现 compaction")
 
 
 def truncate_observation(text: str, max_chars: int = 4000) -> str:

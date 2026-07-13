@@ -5,9 +5,9 @@
 """
 from __future__ import annotations
 from .base import Tool
+from .external import validate_web_url, wrap_external
 import subprocess
 from pathlib import Path
-from .external import validate_web_url, wrap_external
 
 
 # --- edit：三种策略权衡（整文件重写 / unified diff / search-replace）---
@@ -92,6 +92,7 @@ def _web_fetch(url: str, max_tokens: int = 2000) -> str:
             text = truncate_observation(text, max_chars=max_tokens * 4)
             return wrap_external(text, current_url)
     raise RuntimeError("web_fetch 重定向次数超过 5 次")
+    raise NotImplementedError("Day5：实现 web_fetch")
 
 
 # --- task_list（TodoWrite）：自维护待办，提升长任务成功率 ---

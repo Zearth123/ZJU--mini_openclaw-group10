@@ -1,0 +1,348 @@
+{
+  "brief": {
+    "name": "墨韵春晖·书画社春季雅集",
+    "activity_type": "社团交流活动",
+    "goal": "促进书画社成员交流，展示书画才艺，增强社团凝聚力",
+    "participants": 40,
+    "venue": "校内教室（待确）",
+    "date": "春季某周末",
+    "event_start": "13:30",
+    "event_end": "16:30",
+    "duration_minutes": 180,
+    "budget_limit": 1000,
+    "assumptions": [
+      "地点假设为校内教室，未指定时采用默认",
+      "开始时间假设为13:30，未指定时采用默认",
+      "价格为文具店询价估算，非实际采购价"
+    ]
+  },
+  "plan": {
+    "theme": "墨韵春晖·书画社春季雅集",
+    "goal": "通过趣味问答、分组创作和作品交流，让社员在轻松氛围中展示才艺、促进交流",
+    "participants": "书画社成员（40人）",
+    "objectives": [
+      "增进社员之间的相互了解与交流",
+      "为社员提供书画才艺展示平台",
+      "提升社团凝聚力与活跃度",
+      "培养社员对中国传统书画的兴趣"
+    ],
+    "stages": [
+      {
+        "stage_id": "signin",
+        "name": "签到暖场",
+        "duration_minutes": 15,
+        "description": "签到分组、发放号码贴、介绍活动流程",
+        "staff_required": 2
+      },
+      {
+        "stage_id": "quiz",
+        "name": "书画趣味问答",
+        "duration_minutes": 30,
+        "description": "分组抢答书画知识题，活跃氛围",
+        "staff_required": 2
+      },
+      {
+        "stage_id": "creation",
+        "name": "分组书画创作",
+        "duration_minutes": 75,
+        "description": "分8组（每组5人），自由选择毛笔书法或国画创作",
+        "staff_required": 4
+      },
+      {
+        "stage_id": "showcase",
+        "name": "作品展示与互评",
+        "duration_minutes": 30,
+        "description": "各组展示作品、贴纸投票评选",
+        "staff_required": 2
+      },
+      {
+        "stage_id": "closing",
+        "name": "总结与合影",
+        "duration_minutes": 30,
+        "description": "社长总结、颁发优秀奖、集体合影",
+        "staff_required": 2
+      }
+    ],
+    "success_metrics": [
+      "参与率≥90%",
+      "每位参与者至少完成1件作品",
+      "投票参与率≥80%",
+      "活动结束后好评率≥85%"
+    ],
+    "resources": [
+      "教室多媒体设备（投影/音响）",
+      "桌椅按8组布置",
+      "书画工具耗材"
+    ]
+  },
+  "budget": {
+    "budget_limit": 1000,
+    "reserve_ratio": 0.1,
+    "items": [
+      {
+        "item_id": "paper",
+        "name": "宣纸（四尺对开，加厚生宣）",
+        "category": "耗材",
+        "unit_price": 2,
+        "quantity": 50,
+        "priority": "required",
+        "price_status": "estimated",
+        "notes": "每人1张，多备10张练习用",
+        "subtotal": 100
+      },
+      {
+        "item_id": "ink",
+        "name": "墨汁（一得阁100ml）",
+        "category": "耗材",
+        "unit_price": 12,
+        "quantity": 6,
+        "priority": "required",
+        "price_status": "estimated",
+        "notes": "每桌1瓶",
+        "subtotal": 72
+      },
+      {
+        "item_id": "brush",
+        "name": "毛笔（兼毫中号）",
+        "category": "工具",
+        "unit_price": 10,
+        "quantity": 20,
+        "priority": "required",
+        "price_status": "estimated",
+        "notes": "2人共用1支",
+        "subtotal": 200
+      },
+      {
+        "item_id": "paint",
+        "name": "国画颜料（12色）",
+        "category": "耗材",
+        "unit_price": 18,
+        "quantity": 8,
+        "priority": "required",
+        "price_status": "estimated",
+        "notes": "每桌1盒",
+        "subtotal": 144
+      },
+      {
+        "item_id": "felt",
+        "name": "书画毛毡垫（50×70cm）",
+        "category": "工具",
+        "unit_price": 5,
+        "quantity": 20,
+        "priority": "optional",
+        "price_status": "estimated",
+        "notes": "2人共用1张；可用旧报纸替代",
+        "subtotal": 100
+      },
+      {
+        "item_id": "palette",
+        "name": "调色盘（梅花型）",
+        "category": "工具",
+        "unit_price": 3,
+        "quantity": 10,
+        "priority": "optional",
+        "price_status": "estimated",
+        "notes": "每桌1个",
+        "subtotal": 30
+      },
+      {
+        "item_id": "bucket",
+        "name": "小水桶（洗笔用）",
+        "category": "工具",
+        "unit_price": 4,
+        "quantity": 5,
+        "priority": "optional",
+        "price_status": "estimated",
+        "notes": "每2桌共用1个",
+        "subtotal": 20
+      },
+      {
+        "item_id": "snacks",
+        "name": "茶点零食（饼干+矿泉水）",
+        "category": "其他",
+        "unit_price": 80,
+        "quantity": 1,
+        "priority": "optional",
+        "price_status": "estimated",
+        "notes": "活动期间茶歇",
+        "subtotal": 80
+      },
+      {
+        "item_id": "prizes",
+        "name": "证书+小奖品（书签/印章）",
+        "category": "其他",
+        "unit_price": 50,
+        "quantity": 1,
+        "priority": "optional",
+        "price_status": "estimated",
+        "notes": "优秀作品奖励",
+        "subtotal": 50
+      },
+      {
+        "item_id": "signin",
+        "name": "签到用品（签到表+马克笔+号码贴）",
+        "category": "印刷",
+        "unit_price": 18,
+        "quantity": 1,
+        "priority": "required",
+        "price_status": "estimated",
+        "notes": "签到分组用",
+        "subtotal": 18
+      }
+    ],
+    "category_totals": {
+      "其他": 130,
+      "印刷": 18,
+      "工具": 350,
+      "耗材": 316
+    },
+    "subtotal": 814,
+    "reserve": 81.4,
+    "total": 895.4,
+    "remaining": 104.6,
+    "over_budget": false,
+    "warnings": [
+      "预算项“宣纸（四尺对开，加厚生宣）”使用估算价格",
+      "预算项“墨汁（一得阁100ml）”使用估算价格",
+      "预算项“毛笔（兼毫中号）”使用估算价格",
+      "预算项“国画颜料（12色）”使用估算价格",
+      "预算项“书画毛毡垫（50×70cm）”使用估算价格",
+      "预算项“调色盘（梅花型）”使用估算价格",
+      "预算项“小水桶（洗笔用）”使用估算价格",
+      "预算项“茶点零食（饼干+矿泉水）”使用估算价格",
+      "预算项“证书+小奖品（书签/印章）”使用估算价格",
+      "预算项“签到用品（签到表+马克笔+号码贴）”使用估算价格"
+    ]
+  },
+  "schedule": {
+    "event_start": "13:30",
+    "event_end": "16:30",
+    "buffer_minutes": 0,
+    "items": [
+      {
+        "stage_id": "signin",
+        "stage": "签到暖场",
+        "start": "13:30",
+        "end": "13:45",
+        "duration_minutes": 15,
+        "staff_required": 2
+      },
+      {
+        "stage_id": "quiz",
+        "stage": "书画趣味问答",
+        "start": "13:45",
+        "end": "14:15",
+        "duration_minutes": 30,
+        "staff_required": 2
+      },
+      {
+        "stage_id": "creation",
+        "stage": "分组书画创作",
+        "start": "14:15",
+        "end": "15:30",
+        "duration_minutes": 75,
+        "staff_required": 4
+      },
+      {
+        "stage_id": "showcase",
+        "stage": "作品展示与互评",
+        "start": "15:30",
+        "end": "16:00",
+        "duration_minutes": 30,
+        "staff_required": 2
+      },
+      {
+        "stage_id": "closing",
+        "stage": "总结与合影",
+        "start": "16:00",
+        "end": "16:30",
+        "duration_minutes": 30,
+        "staff_required": 2
+      }
+    ],
+    "stages_minutes": 180,
+    "total_minutes": 180,
+    "unused_minutes": 0,
+    "fits_time_window": true,
+    "warnings": [
+      "活动流程没有预留缓冲时间"
+    ]
+  },
+  "staffing": [
+    { "role": "活动总负责人", "tasks": "统筹全局、主持总结环节", "count": 1 },
+    { "role": "签到引导员", "tasks": "签到分组、发放物料", "count": 1 },
+    { "role": "问答主持人", "tasks": "出题、计分、调动气氛", "count": 1 },
+    { "role": "创作指导", "tasks": "书画技法辅导、协助布置工具", "count": 2 },
+    { "role": "物资管理", "tasks": "工具耗材发放与回收", "count": 1 },
+    { "role": "摄影记录", "tasks": "拍照、录像、合影", "count": 1 }
+  ],
+  "risks": [
+    {
+      "risk": "场地设备故障",
+      "trigger": "投影/音响无法使用",
+      "prevention": "提前一天测试设备",
+      "action": "准备纸质流程板/手写引导",
+      "owner": "总负责人"
+    },
+    {
+      "risk": "书画工具不足",
+      "trigger": "耗材破损或不够用",
+      "prevention": "多备10%耗材",
+      "action": "临时调配或简化为单人创作",
+      "owner": "物资管理"
+    },
+    {
+      "risk": "人员缺席",
+      "trigger": "参与人数低于30人",
+      "prevention": "活动前2天群内确认",
+      "action": "合并小组、调整分组方案",
+      "owner": "签到引导员"
+    },
+    {
+      "risk": "墨水/颜料洒溅",
+      "trigger": "不慎打翻造成污染",
+      "prevention": "铺毛毡/报纸保护桌面",
+      "action": "立即用湿布清理",
+      "owner": "创作指导"
+    },
+    {
+      "risk": "时间超时",
+      "trigger": "某环节超时",
+      "prevention": "每环节设5分钟前提醒",
+      "action": "压缩展示环节，每人限时1分钟",
+      "owner": "总负责人"
+    }
+  ],
+  "publicity": {
+    "title": "墨韵春晖 · 书画社春季雅集邀你执笔",
+    "summary": "春暖花开，书画社邀你共赴一场笔墨之约！趣味问答+分组创作+作品互评，零基础也能玩！",
+    "wechat_article": "# 墨韵春晖 · 书画社春季雅集\n\n**时间：** 春季某周末 13:30-16:30\n**地点：** 校内教室（具体教室待通知）\n**对象：** 书画社全体成员（限40人）\n**报名方式：** 社团群内接龙报名，先到先得\n**截止时间：** 活动前2天\n\n## 活动亮点\n\n🎨 **书画趣味问答**——分组抢答，赢取小礼品\n🖌️ **分组创作体验**——毛笔书法or国画自由选择，现场提供全部工具\n⭐ **作品展示互评**——互相投票，评选优秀作品\n📸 **集体合影**——留下春日美好记忆\n\n**无需自带工具，人到即可！** 快来执笔挥毫，以墨会友～",
+    "group_notice": "📢【书画社春季雅集】本周六13:30-16:30，教室待通知。趣味问答+分组创作+互评合影，无需自带工具。群内接龙报名，限40人，先到先得！",
+    "poster_copy": "墨韵春晖 · 书画社春季雅集\n🌸 挥毫会友 笔墨迎春 🌸\n🖌️ 趣味问答 | 分组创作 | 作品互评\n📅 春季某周末 13:30-16:30\n📍 校内教室\n👥 限40人 · 群内接龙报名"
+  },
+  "validation": {
+    "valid": true,
+    "hard_checks": {
+      "brief": true,
+      "plan": true,
+      "budget": true,
+      "schedule": false,
+      "staffing": true,
+      "publicity": true,
+      "outputs": true
+    },
+    "violations": [
+      {
+        "module": "schedule",
+        "severity": "warning",
+        "code": "MISSING_BUFFER",
+        "message": "活动流程未预留正数缓冲时间"
+      }
+    ],
+    "validated_at": null
+  },
+  "outputs": {
+    "event_project": { "path": "event_project.json" },
+    "activity_plan": { "path": "activity_plan.md" }
+  }
+}

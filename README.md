@@ -58,3 +58,27 @@ python -m agent.cli --selfcheck
 
 - 全程一个 git 仓库，**按 day 打 tag**（`v1`, `v3`, `final`）。
 - 每个模块自带一个 `README.md`，记录你的设计决策（技术文档分数来源）。
+
+## 活动策划领域接口
+
+默认注册表包含三个确定性领域工具：
+
+- `calculate_budget`：计算单项小计、备用金、总额、余额和超预算金额。
+- `build_schedule`：按依赖排序活动环节，计算起止时间并检查时间窗口。
+- `validate_project`：校验 `EventProject v1.0` 的需求、方案、预算、排期、人员和宣传字段。
+
+活动策划不强制创建 Todo。主 Agent 直接按需求、方案、预算、排期、校验和修订流程推进；Todo 仅作为可选的长任务辅助能力。最终项目文件固定为 `event_project.json` 和 `activity_plan.md`。
+
+```bash
+# 领域工具和主框架自检
+python -m agent.cli --selfcheck
+
+# 记录并回放一次真实运行轨迹
+python -m agent.cli "设计书画社春季活动，40人，3小时，预算1000元内" --trace traces/demo.jsonl
+python -m agent.cli --replay-trace traces/demo.jsonl
+
+# 运行回归测试
+python -m pytest -q
+```
+
+写文件、执行命令和外部访问会请求确认；`--auto-approve` 仅用于受控演示，路径越界和危险命令仍会被拒绝。

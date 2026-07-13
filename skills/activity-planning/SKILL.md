@@ -27,24 +27,31 @@ description: 当用户需要为社团、班级、校园组织或小型团队设�
 4. 编制并校验预算
    - 将每项支出写为：名称、类别、单价、数量、小计、优先级、价格依据。
    - 优先调用 `calculate_budget`；若没有该工具，使用计算工具或脚本做确定性计算，不要心算关键金额。
+   - 调用成功后，将工具返回的完整 JSON 原样写入 `EventProject.budget`；不得重命名 `subtotal`、`reserve`、`total`、`remaining`，也不得手工重新计算覆盖。
    - 计算小计、分类合计、备用金、总额和余额。默认备用金比例为 10%，但应明确这是可调整假设。
    - 超预算时先削减可选项，再调整数量或寻找替代方案；每次调整后重新计算，不能只口头声称已达标。
 
 5. 拆解任务与排期
    - 按前期筹备、活动当天、收尾复盘拆分任务；每项写负责人或角色、截止时间、交付物、依赖和备份人。
    - 优先调用 `build_schedule` 计算各环节起止时间；没有该工具时使用时间计算脚本或计算工具。
+   - 调用工具前，为 `plan.stages` 的每个环节分配唯一 `stage_id`；工具返回后，将完整 JSON 原样写入 `EventProject.schedule`，不得手工重建。
+   - `plan.stages` 与 `schedule.items` 的 `stage_id`、`staff_required` 必须一一对应；排期起止时间必须与 brief 一致，`schedule.total_minutes` 不得超过 `brief.duration_minutes`。
    - 安排签到、布场、撤场和缓冲时间，检查依赖环、时间窗口、人员冲突及无人负责的任务。
 
 6. 生成宣传内容
    - 在方案、预算和时间确定后，再生成活动摘要、标题和宣传文案。
    - 文案必须包含时间、地点、对象、报名方式、截止时间和必要提醒；未知信息使用明确占位符，不得编造。
+   - `EventProject.publicity` 必须至少包含 `wechat_article`；可以额外提供 `title`、`content`、`summary`、`group_notice` 或 `poster_copy`，但不能只使用 `title/content`。
 
 7. 风险与统一校验
    - 至少检查天气或场地、设备、人员缺席、安全、低参与度、预算波动和隐私风险；逐项给出触发条件、预防措施、应急动作和责任角色。
    - 优先调用 `validate_project`。发现错误时修改对应模块，重新运行预算或排期工具，再次校验，直到无硬性错误或明确说明无法消除的阻塞项。
+   - 校验后只要预算、排期、方案、宣传或 outputs 被修改，旧 validation 立即失效；必须重新调用 `validate_project` 并把完整新结果写回，不得复用旧 violations 或声称是“校验器字段问题”。
 
 8. 输出结果
-   - 按下方结构输出。用户要求保存时，使用写文件工具写入指定路径，并在答复中报告路径。
+   - 按下方结构输出，并将最终交付文件直接写入当前工作目录根部：`event_project.json` 和 `activity_plan.md`，不得放进 `output/`、`outputs/` 或 `data/`。
+   - `EventProject.outputs` 必须严格写为 `{"event_project":{"path":"event_project.json"},"activity_plan":{"path":"activity_plan.md"}}`，不得给 path 添加目录前缀。
+   - 最后一次 `validate_project` 返回后，将完整结果写回 `EventProject.validation`，再保存最终 `event_project.json`。只有 `validation.valid` 为 `true` 时才能声称校验通过。
    - 区分事实、来源数据和假设；金额统一币种，时间统一格式。
 
 ## 注意事项
