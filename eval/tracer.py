@@ -6,6 +6,7 @@ from pathlib import Path
 class Tracer:
     def __init__(self, path: str):
         self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text("", encoding="utf-8")   # 清空/新建
 
     def log_step(self, step: int, tool_calls: list, prompt_tokens: int,

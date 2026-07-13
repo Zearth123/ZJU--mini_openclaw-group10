@@ -1,0 +1,155 @@
+{
+  "brief": {
+    "name": "墨韵春生·书画社春季交流活动",
+    "date": "2025-04-19（周六）",
+    "activity_type": "书画创作交流",
+    "goal": "促进社员间书画交流、激发创作灵感、展示社员作品",
+    "participants": 40,
+    "budget_limit": 1000,
+    "duration_minutes": 180,
+    "event_start": "14:00",
+    "event_end": "17:00",
+    "venue": "校内画室/美术教室（待确认）"
+  },
+  "plan": {
+    "theme": "墨韵春生——以笔墨捕捉春天",
+    "objectives": [
+      "增进社员书画交流与创作热情",
+      "提升国画/书法基础技法",
+      "产出可展览的春季主题作品",
+      "通过互评锻炼审美鉴赏能力"
+    ],
+    "participant_count": 40,
+    "stages": [
+      {
+        "name": "签到 & 物资领取",
+        "start": "13:30",
+        "end": "14:00",
+        "duration_minutes": 30,
+        "dependencies": [],
+        "staff_required": 2,
+        "description": "社员入场签到，领取毛笔、宣纸、墨汁、颜料等创作物资"
+      },
+      {
+        "name": "开场 & 破冰分组",
+        "start": "14:00",
+        "end": "14:15",
+        "duration_minutes": 15,
+        "dependencies": [],
+        "staff_required": 2,
+        "description": "社长致辞介绍活动日程；按创作方向（书法/国画）分组，每组5人共8组"
+      },
+      {
+        "name": "主题示范：春季花鸟写意技法",
+        "start": "14:15",
+        "end": "14:45",
+        "duration_minutes": 30,
+        "dependencies": ["开场 & 破冰分组"],
+        "staff_required": 2,
+        "description": "书画骨干现场演示春季花卉（桃花/樱花）写意画法和题字技巧"
+      },
+      {
+        "name": "自由创作（书法/国画）",
+        "start": "14:45",
+        "end": "16:00",
+        "duration_minutes": 75,
+        "dependencies": ["主题示范：春季花鸟写意技法"],
+        "staff_required": 3,
+        "description": "各组围绕「春」主题自由创作书法或国画；骨干巡场指导；提供参考图样"
+      },
+      {
+        "name": "作品展示 & 互评选票",
+        "start": "16:00",
+        "end": "16:30",
+        "duration_minutes": 30,
+        "dependencies": ["自由创作（书法/国画）"],
+        "staff_required": 2,
+        "description": "每组选1-2幅代表作展示讲解；全员投票评选最佳创作/创意/人气"
+      },
+      {
+        "name": "颁奖 & 合影",
+        "start": "16:30",
+        "end": "16:45",
+        "duration_minutes": 15,
+        "dependencies": ["作品展示 & 互评选票"],
+        "staff_required": 1,
+        "description": "颁发三项大奖和参与奖；全体合影"
+      },
+      {
+        "name": "撤场整理",
+        "start": "16:45",
+        "end": "17:00",
+        "duration_minutes": 15,
+        "dependencies": ["颁奖 & 合影"],
+        "staff_required": 4,
+        "description": "回收可重复使用物资（毛笔/毡垫等），清理场地"
+      }
+    ],
+    "success_metrics": [
+      "到场人数≥35人（出席率≥87%）",
+      "完成作品数量≥30幅",
+      "互评投票参与率≥80%",
+      "活动结束后满意度调查均分≥4/5"
+    ]
+  },
+  "budget": {
+    "items": [
+      {"item_id": "M01", "name": "练习用毛边纸", "category": "创作物资", "unit_price": 20, "quantity": 2, "priority": "required", "price_status": "confirmed", "subtotal": 40, "notes": "2刀，每刀100张"},
+      {"item_id": "M02", "name": "作品用生宣纸", "category": "创作物资", "unit_price": 40, "quantity": 1, "priority": "required", "price_status": "confirmed", "subtotal": 40, "notes": "1包50张"},
+      {"item_id": "M03", "name": "一得阁墨汁500ml", "category": "创作物资", "unit_price": 15, "quantity": 4, "priority": "required", "price_status": "confirmed", "subtotal": 60, "notes": "每瓶500ml"},
+      {"item_id": "M04", "name": "马利国画颜料12色", "category": "创作物资", "unit_price": 18, "quantity": 5, "priority": "required", "price_status": "confirmed", "subtotal": 90, "notes": "8人共用1盒"},
+      {"item_id": "M05", "name": "兼毫中号毛笔", "category": "创作物资", "unit_price": 10, "quantity": 20, "priority": "required", "price_status": "confirmed", "subtotal": 200, "notes": "2人共用1支，活动后回收"},
+      {"item_id": "M06", "name": "书画毛毡垫", "category": "创作物资", "unit_price": 8, "quantity": 10, "priority": "required", "price_status": "confirmed", "subtotal": 80, "notes": "4人共用1块"},
+      {"item_id": "M07", "name": "塑料调色盘", "category": "创作物资", "unit_price": 4, "quantity": 10, "priority": "required", "price_status": "confirmed", "subtotal": 40, "notes": "4人共用1个"},
+      {"item_id": "M08", "name": "小笔洗桶", "category": "创作物资", "unit_price": 5, "quantity": 8, "priority": "required", "price_status": "confirmed", "subtotal": 40, "notes": "5人共用1个"},
+      {"item_id": "P01", "name": "最佳创作奖奖品", "category": "奖品", "unit_price": 25, "quantity": 3, "priority": "required", "price_status": "estimated", "subtotal": 75, "notes": "3人×25元文具礼包"},
+      {"item_id": "P02", "name": "最佳创意奖奖品", "category": "奖品", "unit_price": 20, "quantity": 3, "priority": "required", "price_status": "estimated", "subtotal": 60, "notes": "3人×20元文具礼包"},
+      {"item_id": "P03", "name": "最佳人气奖奖品", "category": "奖品", "unit_price": 15, "quantity": 3, "priority": "required", "price_status": "estimated", "subtotal": 45, "notes": "3人×15元文具礼包"},
+      {"item_id": "P04", "name": "参与奖小礼品", "category": "奖品", "unit_price": 2, "quantity": 31, "priority": "optional", "price_status": "estimated", "subtotal": 62, "notes": "书签/贴纸等小礼品"},
+      {"item_id": "O01", "name": "打印材料", "category": "其他", "unit_price": 30, "quantity": 1, "priority": "required", "price_status": "estimated", "subtotal": 30, "notes": "创作参考图样、评分表、证书"},
+      {"item_id": "O02", "name": "一次性用品", "category": "其他", "unit_price": 30, "quantity": 1, "priority": "required", "price_status": "estimated", "subtotal": 30, "notes": "纸杯、纸巾、桌布"}
+    ],
+    "subtotal": 892,
+    "reserve": 89.2,
+    "reserve_ratio": 0.1,
+    "total": 981.2,
+    "budget_limit": 1000,
+    "remaining": 18.8
+  },
+  "schedule": {
+    "event_start": "14:00",
+    "event_end": "17:00",
+    "buffer_minutes": 10,
+    "items": [
+      {"stage_id": "S01", "stage": "开场 & 破冰分组", "start": "14:00", "end": "14:15", "duration_minutes": 15, "staff_required": 2},
+      {"stage_id": "S02", "stage": "主题示范：春季花鸟写意技法", "start": "14:15", "end": "14:45", "duration_minutes": 30, "staff_required": 2},
+      {"stage_id": "S03", "stage": "自由创作（书法/国画）", "start": "14:45", "end": "16:00", "duration_minutes": 75, "staff_required": 3},
+      {"stage_id": "S04", "stage": "作品展示 & 互评选票", "start": "16:00", "end": "16:30", "duration_minutes": 30, "staff_required": 2},
+      {"stage_id": "S05", "stage": "颁奖 & 合影", "start": "16:30", "end": "16:45", "duration_minutes": 15, "staff_required": 1}
+    ],
+    "total_minutes": 175,
+    "fits_time_window": true
+  },
+  "staffing": {
+    "roles": [
+      {"role": "总策划/主持", "count": 1, "responsibilities": "整体统筹、开场主持、节奏把控"},
+      {"role": "技术指导（书画骨干）", "count": 2, "responsibilities": "现场示范、技法指导、协助创作"},
+      {"role": "签到 & 物资组", "count": 2, "responsibilities": "签到登记、创作物资准备与发放"},
+      {"role": "评委组", "count": 3, "responsibilities": "作品评选、点评"},
+      {"role": "宣传 & 摄影", "count": 1, "responsibilities": "活动拍照、社群动态更新、投屏"},
+      {"role": "参赛社员", "count": 31, "responsibilities": "参与创作与互评"}
+    ],
+    "total_staff": 9,
+    "total_participants": 40
+  },
+  "publicity": [
+    {
+      "type": "群公告/海报文案",
+      "content": "🖌️ 书画社「墨韵春生」春季交流活动来啦！🖌️\n\n🕐 时间：2025.04.19（周六）14:00–17:00\n📍 地点：校内画室\n👥 对象：全体书画社成员（限40人）\n\n🎯 活动亮点：\n  ✨ 骨干现场示范春季花鸟写意技法\n  🎨 自由创作时间，可书法可国画\n  🏆 最佳创作/最佳创意/最佳人气三项大奖\n  🎁 参与即有奖，材料全包！\n\n📝 报名：群内接龙，先到先得\n\n💡 无需自备材料，人到即可～\n\n#书画社 #墨韵春生 #春季活动"
+    }
+  ],
+  "outputs": [
+    {"path": "data/event_project.json", "description": "完整项目JSON数据"},
+    {"path": "data/activity_plan.md", "description": "活动策划方案Markdown文档"}
+  ]
+}
