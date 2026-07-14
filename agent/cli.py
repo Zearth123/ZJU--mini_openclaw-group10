@@ -111,9 +111,20 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as e:  # noqa
             print(f"[提示] MCP 未接入（{e}），仅用内置工具。")
 
-    # 微信公众号 MCP：仅在配置凭据时启用，不影响普通命令行任务。
+    # 读取微信凭据：优先环境变量，其次配置文件，都不设则跳过
     wechat_appid = os.environ.get("WECHAT_APPID", "")
     wechat_secret = os.environ.get("WECHAT_APPSECRET", "")
+    if not wechat_appid or not wechat_secret:
+        creds_path = os.path.expanduser("~/.claude/credentials/wechat.json")
+        if os.path.isfile(creds_path):
+            try:
+                import json as _json
+                _creds = _json.loads(open(creds_path).read())
+                wechat_appid = _creds.get("WECHAT_APPID", "")
+                wechat_secret = _creds.get("WECHAT_APPSECRET", "")
+            except Exception:
+                pass
+
     if wechat_appid and wechat_secret:
         try:
             wechat_mcp = MCPClient(
@@ -126,7 +137,6 @@ def main(argv: list[str] | None = None) -> int:
             wechat_mcp.start()
             register_mcp_tools(reg, wechat_mcp)
             mcp_clients.append(wechat_mcp)
-            print("[ok] 微信公众号 MCP 已接入")
         except Exception as e:  # noqa
             print(f"[warn] 微信公众号 MCP 未接入（{e}）")
 
@@ -149,12 +159,24 @@ def main(argv: list[str] | None = None) -> int:
     # 组装系统提示词：基础提示 + 技能目录 + 项目记忆
     system = SYSTEM_PROMPT + "\n\n# 可用 Skills（相关时按其流程执行）\n" + skills_catalog(skills)
 
-    # 只把与当前任务相关的 Skill 正文注入上下文，避免所有 Skill 一次性撑大提示词。
+    # 只把最相关的 1-2 个 Skill 的简要说明注入上下文，避免撑大提示词。
+    # 完整的 skill 正文在 agent 运行时按需由 LLM 自行决定是否参考。
     relevant_skills = load_relevant_skills(args.task, skills)
     if relevant_skills:
-        system += "\n\n# 当前任务相关 Skills"
-        for skill in relevant_skills:
-            system += "\n\n" + skill_detail(skill)
+        system += "\n\n## 当前最匹配的 Skill\n"
+        for skill in relevant_skills[:2]:
+            # 只取描述 + 步骤/流程部分，不包含完整模板和参考文档
+            body_lines = skill.body.split("\n")
+            trimmed_body = []
+            capture = True
+            for line in body_lines:
+                # 遇到 "## 可用的参考模板"、"## 可调用的工具"、"## 输出格式" 等尾部章节就截断
+                if line.startswith("## ") and any(kw in line for kw in ["模板", "工具", "Tool", "输出格式", "注意事项", "参考"]):
+                    capture = False
+                if capture:
+                    trimmed_body.append(line)
+            system += f"\n**{skill.name}**: {skill.description}\n\n"
+            system += "\n".join(trimmed_body[:80]) + "\n"  # 最多 80 行正文
 
     # 召回项目记忆：从 MEMORY.md 读取历史信息并注入系统提示
     recalled = Memory("MEMORY.md").recall()

@@ -26,8 +26,8 @@ def _summarize(backend, chunk: list[dict]) -> str:
 def maybe_compact(
     messages: list[dict[str, Any]],
     backend: Any,
-    budget: int = 6000,
-    keep_recent: int = 4,
+    budget: int = 12000,
+    keep_recent: int = 8,
 ) -> list[dict[str, Any]]:
     """超预算时压缩较早历史，并保留最近的完整 Agent 轮次。"""
     if estimate_tokens(messages) <= budget:
