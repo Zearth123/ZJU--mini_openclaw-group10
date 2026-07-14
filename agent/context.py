@@ -12,19 +12,62 @@ from typing import Any
 
 
 def estimate_tokens(messages: list[dict[str, Any]]) -> int:
-    # TODO[Day4] 粗估即可（字符数/4 或用 tokenizer 精确数）
     return sum(len(str(m.get("content", ""))) for m in messages) // 4
 
+def _summarize(backend, chunk: list[dict]) -> str:
+    text = "\n".join(f"{m['role']}: {m.get('content','')}" for m in chunk)
+    prompt = "把下面的对话历史压缩成要点，保留任务目标、关键发现、已完成步骤：\n" + text
+    resp = backend.chat([{"role": "user", "content": prompt}], tools=[])
+    return resp.get("content", "")
 
-def maybe_compact(messages: list[dict[str, Any]], budget: int = 6000) -> list[dict[str, Any]]:
-    """超预算则压缩历史，返回新的 messages。"""
+def maybe_compact(
+    messages: list[dict[str, Any]],
+    backend: Any,
+    budget: int = 6000,
+    keep_recent: int = 4,
+) -> list[dict[str, Any]]:
+    """超预算时压缩较早历史，并保留最近的完整 Agent 轮次。"""
     if estimate_tokens(messages) <= budget:
         return messages
-    # TODO[Day4] 实现 compaction：
-    #   1) 保留 system（第0条）
-    #   2) 把中间较早的 user/assistant/tool 摘要成一条 system 备忘（可调后端做摘要）
-    #   3) 保留最近 K 轮原文
-    raise NotImplementedError("Day5：实现 compaction")
+
+    if len(messages) <= 1:
+        return messages
+
+    system_message = messages[0]
+    keep_recent = max(0, keep_recent)
+
+    assistant_starts = [
+        index
+        for index, message in enumerate(messages[1:], start=1)
+        if message.get("role") == "assistant"
+    ]
+
+    if keep_recent == 0:
+        split_at = len(messages)
+    elif len(assistant_starts) > keep_recent:
+        split_at = assistant_starts[-keep_recent]
+    else:
+        return messages
+
+    history_chunk = messages[1:split_at]
+    recent_messages = messages[split_at:]
+
+    if not history_chunk:
+        return messages
+
+    summary = _summarize(backend, history_chunk)
+
+    memo = {
+        "role": "system",
+        "content": "历史备忘：" + (summary or "[摘要为空]"),
+    }
+
+    return [
+        system_message,
+        memo,
+        *recent_messages,
+    ]
+
 
 
 def truncate_observation(text: str, max_chars: int = 4000) -> str:
