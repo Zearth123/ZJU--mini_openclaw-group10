@@ -1,94 +1,96 @@
-"""最小 MCP 客户端（Day6）。
+"""最小 MCP 客户端（Day6/8）。
 
-MCP（Model Context Protocol）让工具集从"写死在代码里"变成"可插拔的外部 server"。
-本文件实现一个最小客户端：通过 stdio 跟 server 通信，做 JSON-RPC。
-
-要实现的握手与调用：
-  1. 启动 server 子进程（stdio transport）
-  2. initialize 握手
-  3. tools/list  —— 拉取 server 暴露的工具
-  4. tools/call  —— 把某次调用转发给 server，拿回结果
-然后在 agent/loop 里，把这些 MCP 工具**透明合并**进内置 ToolRegistry。
+通过 stdio 与 MCP server 通信，做 JSON-RPC。
+支持 initialize 握手、tools/list、tools/call、超时保护。
 """
 from __future__ import annotations
-import json  # JSON-RPC 消息的序列化和反序列化
-import subprocess  # 启动 MCP server 子进程（stdio transport）
+import json
+import os
+import select
+import subprocess
+import time
 from typing import Any
 
-from tools.base import Tool, ToolRegistry  # 工具基类和注册表，用于透明合并 MCP 工具
+from tools.base import Tool, ToolRegistry
 
 
 class MCPClient:
-    """MCP（Model Context Protocol）客户端：通过 stdio 与 MCP server 通信，拉取并调用远程工具。
-
-    工作流程：
-        1. 启动 server 子进程（stdio transport）
-        2. initialize 握手
-        3. tools/list 拉取 server 暴露的工具
-        4. tools/call 将某次调用转发给 server，拿回结果
-    """
-
-    def __init__(self, command: list[str]):
-        """初始化 MCP 客户端。
-
-        参数:
-            command: 启动 MCP server 的命令列表（如 ["python", "echo_server.py"]）
-        """
+    def __init__(self, command: list[str], env: dict[str, str] | None = None):
         self.command = command
-        self.proc: subprocess.Popen | None = None  # server 子进程引用
-        self._id = 0  # JSON-RPC 请求 ID 自增计数器
+        self.env = env
+        self.proc: subprocess.Popen | None = None
+        self._id = 0
 
     def start(self) -> None:
-        """启动 MCP server 子进程，通过 stdin/stdout 通信，并执行 initialize 握手。"""
-        # TODO[Day5] 启动子进程，stdin/stdout 接管，做 initialize 握手
-        raise NotImplementedError("Day6：实现 stdio transport + initialize")
+        """启动子进程，stdin/stdout 接管，做 initialize 握手"""
+        env = os.environ.copy()
+        if self.env:
+            env.update(self.env)
+        self.proc = subprocess.Popen(
+            self.command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=env,
+        )
+        self._rpc("initialize", {
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": {"name": "mini-openclaw", "version": "0.1"},
+        })
+        self._send({
+            "jsonrpc": "2.0", "method": "notifications/initialized",
+        })
 
-    def _rpc(self, method: str, params: dict | None = None) -> Any:
-        """发送一条 JSON-RPC 请求，等待并返回对应响应。
+    def _send(self, req: dict) -> None:
+        assert self.proc is not None and self.proc.stdin is not None
+        self.proc.stdin.write(json.dumps(req) + "\n")
+        self.proc.stdin.flush()
 
-        参数:
-            method: JSON-RPC 方法名
-            params: 请求参数
-
-        返回:
-            服务端返回的 result 字段
-        """
-        # TODO[Day5] 发一条 JSON-RPC 请求（带自增 id），读回对应响应
-        raise NotImplementedError("Day6：实现 JSON-RPC 收发")
+    def _rpc(self, method: str, params: dict | None = None, timeout: float = 30.0) -> Any:
+        self._id += 1
+        req = {"jsonrpc": "2.0", "id": self._id, "method": method}
+        if params is not None:
+            req["params"] = params
+        self._send(req)
+        assert self.proc is not None and self.proc.stdout is not None
+        deadline = time.monotonic() + timeout
+        line = ""
+        while time.monotonic() < deadline:
+            r, _, _ = select.select([self.proc.stdout], [], [], 0.5)
+            if r:
+                line = self.proc.stdout.readline()
+                break
+        if not line:
+            raise RuntimeError(f"MCP 请求 {method} 超时（{timeout}s）")
+        resp = json.loads(line)
+        if "error" in resp:
+            raise RuntimeError(f"MCP 调用失败 [{method}]: {resp['error']['message']}")
+        return resp.get("result")
 
     def list_tools(self) -> list[dict]:
-        """调用 tools/list，返回 MCP server 暴露的工具描述列表。"""
-        # TODO[Day5] 调 tools/list，返回工具描述列表
-        raise NotImplementedError("Day6：实现 tools/list")
+        result = self._rpc("tools/list")
+        return result.get("tools", [])
 
     def call_tool(self, name: str, arguments: dict) -> str:
-        """调用 MCP server 上的某个工具，返回结果文本。
+        result = self._rpc("tools/call", {"name": name, "arguments": arguments})
+        content = result.get("content", [])
+        texts = [item["text"] for item in content if item.get("type") == "text"]
+        return "\n".join(texts)
 
-        参数:
-            name: 工具名称
-            arguments: 工具参数
-
-        返回:
-            工具执行结果文本
-        """
-        # TODO[Day5] 调 tools/call，返回结果文本
-        raise NotImplementedError("Day6：实现 tools/call")
+    def stop(self) -> None:
+        if self.proc:
+            self.proc.terminate()
+            self.proc.wait(timeout=5)
+            self.proc = None
 
 
 def register_mcp_tools(registry: ToolRegistry, client: MCPClient) -> None:
-    """把一个 MCP server 的工具包装成内置 Tool 并注册，实现透明合并。
-
-    MCP 工具会被自动添加 "mcp__" 前缀以避免和内置工具撞名。
-    这样在 agent 循环中，MCP 工具与内置工具可以统一调度，无需区分来源。
-
-    参数:
-        registry: 工具注册表（内置工具集）
-        client: 已连接的 MCP 客户端
-    """
     for spec in client.list_tools():
         name = spec["name"]
         registry.register(Tool(
-            name=f"mcp__{name}",            # 命名空间避免和内置工具撞名
+            name=f"mcp__{name}",
             description=spec.get("description", ""),
             parameters=spec.get("inputSchema", {"type": "object", "properties": {}}),
             run=lambda _n=name, **kw: client.call_tool(_n, kw),

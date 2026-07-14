@@ -1,0 +1,4 @@
+interface:
+  display_name: "文章配图"
+  short_description: "Generate screenshot-ready HTML illustrations for articles."
+  default_prompt: "Use $article-illustrator to create screenshot-ready HTML illustrations for my article."

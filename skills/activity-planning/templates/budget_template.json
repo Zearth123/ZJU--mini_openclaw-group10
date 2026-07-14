@@ -1,0 +1,36 @@
+{
+  "budget_limit": 0,
+  "reserve_ratio": 0.1,
+  "items": [
+    {
+      "item_id": "budget-001",
+      "name": "宣纸",
+      "category": "material",
+      "unit_price": 3,
+      "quantity": 100,
+      "priority": "required",
+      "price_status": "confirmed",
+      "notes": ""
+    },
+    {
+      "item_id": "budget-002",
+      "name": "定制纪念品",
+      "category": "prize",
+      "unit_price": 10,
+      "quantity": 40,
+      "priority": "optional",
+      "price_status": "estimated",
+      "notes": "需确认供应商报价"
+    }
+  ],
+  "categories": {
+    "material": "物资材料",
+    "publicity": "宣传费用",
+    "food": "餐饮茶歇",
+    "equipment": "设备租赁",
+    "decoration": "场地装饰",
+    "prize": "奖品/纪念品",
+    "transport": "交通费用",
+    "emergency": "应急备用金"
+  }
+}

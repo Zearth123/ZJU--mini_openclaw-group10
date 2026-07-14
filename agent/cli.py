@@ -6,7 +6,9 @@
 """
 from __future__ import annotations
 import argparse     # 命令行参数解析
+import os           # 微信公众号 MCP 凭据
 import sys          # 系统退出、标准输入判断
+from pathlib import Path  # 动态定位项目根目录
 
 from tools.base import build_default_registry   # 创建默认工具注册表（13 个内置工具）
 from agent.memory import Memory                  # 持久化记忆
@@ -52,15 +54,21 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("task", nargs="?", help="要让 agent 完成的任务（自然语言）")
     p.add_argument("--image", action="append", default=[], metavar="PATH",
                    help="随任务发送的图片路径；可重复指定")
-    p.add_argument("--document",action="append",default=[],metavar="PATH",help="随任务提供的 PDF 或 DOCX 文档路径；可重复指定",
-)
+    p.add_argument(
+        "--document",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="随任务提供的 PDF 或 DOCX 文档路径；可重复指定",
+    )
     p.add_argument("--selfcheck", action="store_true", help="只做骨架自检")
     p.add_argument("--trace", metavar="PATH", help="将运行轨迹写入 JSONL 文件")
     p.add_argument("--replay-trace", metavar="PATH", help="回放已有 JSONL 轨迹")
     p.add_argument(
-    "--auto-approve",
-    action="store_true",
-    help="自动批准需要确认的工具，仅用于受控实验",)
+        "--auto-approve",
+        action="store_true",
+        help="自动批准需要确认的工具，仅用于受控实验",
+    )
     p.add_argument(
         "--verbose",
         action="store_true",
@@ -81,14 +89,16 @@ def main(argv: list[str] | None = None) -> int:
     from agent.loop import AgentLoop
     reg = build_default_registry()                     # 1. 构建工具注册表
     mcp_clients = []                                   # 2. 初始化 MCP 客户端列表
-    # 配置 MCP 服务器启动命令：文件系统服务器
+    # 配置 MCP 服务器启动命令：文件系统服务器。
+    # 动态定位项目根目录，避免写死某台机器上的绝对路径。
+    project_root = Path(__file__).resolve().parents[1]
     commands = [
-    [
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/minioc/mini-openclaw",
-    ],
+        [
+            "npx",
+            "-y",
+            "@modelcontextprotocol/server-filesystem",
+            str(project_root),
+        ],
     ]
     from mcp.client import MCPClient, register_mcp_tools
     # 逐个启动 MCP 服务器并将工具注册到工具注册表
@@ -100,6 +110,26 @@ def main(argv: list[str] | None = None) -> int:
             mcp_clients.append(mcp)
         except Exception as e:  # noqa
             print(f"[提示] MCP 未接入（{e}），仅用内置工具。")
+
+    # 微信公众号 MCP：仅在配置凭据时启用，不影响普通命令行任务。
+    wechat_appid = os.environ.get("WECHAT_APPID", "")
+    wechat_secret = os.environ.get("WECHAT_APPSECRET", "")
+    if wechat_appid and wechat_secret:
+        try:
+            wechat_mcp = MCPClient(
+                [sys.executable, "-m", "mcp.wechat_mp_server"],
+                env={
+                    "WECHAT_APPID": wechat_appid,
+                    "WECHAT_APPSECRET": wechat_secret,
+                },
+            )
+            wechat_mcp.start()
+            register_mcp_tools(reg, wechat_mcp)
+            mcp_clients.append(wechat_mcp)
+            print("[ok] 微信公众号 MCP 已接入")
+        except Exception as e:  # noqa
+            print(f"[warn] 微信公众号 MCP 未接入（{e}）")
+
     # 初始化 LLM 后端：优先使用 DeepSeek，失败则回退到 FakeBackend
     try:
         from backend.client import DeepSeekBackend
@@ -109,10 +139,22 @@ def main(argv: list[str] | None = None) -> int:
         print(f"[提示] 未启用真后端（{e}），回退 FakeBackend。配置 DEEPSEEK_API_KEY 后即用真模型。")
         backend = FakeBackend()
     # 加载技能模块：从技能目录加载 SKILL.md 文件
-    from skills.loader import load_skills, skills_catalog
+    from skills.loader import (
+        load_relevant_skills,
+        load_skills,
+        skill_detail,
+        skills_catalog,
+    )
     skills = load_skills()
     # 组装系统提示词：基础提示 + 技能目录 + 项目记忆
     system = SYSTEM_PROMPT + "\n\n# 可用 Skills（相关时按其流程执行）\n" + skills_catalog(skills)
+
+    # 只把与当前任务相关的 Skill 正文注入上下文，避免所有 Skill 一次性撑大提示词。
+    relevant_skills = load_relevant_skills(args.task, skills)
+    if relevant_skills:
+        system += "\n\n# 当前任务相关 Skills"
+        for skill in relevant_skills:
+            system += "\n\n" + skill_detail(skill)
 
     # 召回项目记忆：从 MEMORY.md 读取历史信息并注入系统提示
     recalled = Memory("MEMORY.md").recall()
@@ -142,7 +184,13 @@ def main(argv: list[str] | None = None) -> int:
         tracer=tracer,
         confirm_callback=confirm,
     )
-    print(agent.run(args.task, image_paths=args.image, document_paths=args.document))
+    print(
+        agent.run(
+            args.task,
+            image_paths=args.image,
+            document_paths=args.document,
+        )
+    )
     return 0
 
 
