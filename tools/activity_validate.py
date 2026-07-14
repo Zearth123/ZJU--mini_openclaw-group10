@@ -1,14 +1,15 @@
 """EventProject v1.0 统一校验 Tool。"""
-from __future__ import annotations
+from __future__ import annotations  # 延迟求值类型注解
 
-import json
-from decimal import Decimal, InvalidOperation
-from typing import Any
+import json  # JSON 序列化
+from decimal import Decimal, InvalidOperation  # 高精度金额比较
+from typing import Any  # 通用类型提示
 
-from .base import Tool
+from .base import Tool  # 工具基类
 
 
 def _number(value: Any) -> Decimal | None:
+    """安全地将任意值转为 Decimal 金额，转换失败或非有限数时返回 None。"""
     try:
         number = Decimal(str(value))
     except (InvalidOperation, ValueError, TypeError):
@@ -23,6 +24,7 @@ def _add_violation(
     code: str,
     message: str,
 ) -> None:
+    """向违规列表中添加一条检查违规记录。severity 为 error 时表示校验不通过。"""
     violations.append({
         "module": module,
         "severity": severity,
@@ -32,12 +34,12 @@ def _add_violation(
 
 
 def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
-    """校验当前策划阶段要求；不检查风险、成员姓名、实际结果或复盘。"""
+    """全面校验 EventProject v1.0 的七个模块：brief/plan/budget/schedule/staffing/publicity/outputs。"""
     if not isinstance(project, dict):
         raise ValueError("project 必须是对象")
 
-    violations: list[dict[str, str]] = []
-    checks = {
+    violations: list[dict[str, str]] = []  # 收集所有违规项
+    checks = {  # 各模块检查通过状态，True 表示通过
         "brief": True,
         "plan": True,
         "budget": True,
@@ -47,6 +49,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
         "outputs": True,
     }
 
+    # ---- 第 1 部分：校验 brief（活动基本需求）----
     brief = project.get("brief")
     if not isinstance(brief, dict):
         brief = {}
@@ -84,6 +87,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
         checks["brief"] = False
         _add_violation(violations, "brief", "error", "INVALID_BUDGET_LIMIT", "budget_limit 必须是非负数字")
 
+    # ---- 第 2 部分：校验 plan（活动方案）----
     plan = project.get("plan")
     if not isinstance(plan, dict):
         plan = {}
@@ -104,6 +108,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
         checks["plan"] = False
         _add_violation(violations, "plan", "error", "MISSING_SUCCESS_METRICS", "缺少可衡量的成功指标")
 
+    # ---- 第 3 部分：校验 budget（预算）----
     budget = project.get("budget")
     if not isinstance(budget, dict):
         budget = {}
@@ -115,6 +120,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
         _add_violation(violations, "budget", "error", "MISSING_BUDGET_ITEMS", "预算项目不能为空")
         budget_items = []
 
+    # 逐项校验预算：单价乘数量是否等于小计
     calculated_subtotal = Decimal("0")
     for index, item in enumerate(budget_items, 1):
         if not isinstance(item, dict):
@@ -134,11 +140,13 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
             _add_violation(violations, "budget", "error", "ITEM_SUBTOTAL_MISMATCH", f"预算项 {index} 的小计不等于单价乘数量")
         calculated_subtotal += expected
 
+    # 校验汇总 subtotal 是否与逐项累加一致
     stored_subtotal = _number(budget.get("subtotal"))
     if stored_subtotal is None or abs(stored_subtotal - calculated_subtotal) > Decimal("0.01"):
         checks["budget"] = False
         _add_violation(violations, "budget", "error", "BUDGET_SUBTOTAL_MISMATCH", "预算 subtotal 与项目加总不一致")
 
+    # 校验 total = subtotal + reserve 以及 remaining 的计算
     reserve = _number(budget.get("reserve"))
     total = _number(budget.get("total"))
     remaining = _number(budget.get("remaining"))
@@ -158,6 +166,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
                 checks["budget"] = False
                 _add_violation(violations, "budget", "error", "REMAINING_MISMATCH", "预算 remaining 计算错误")
 
+    # ---- 第 4 部分：校验 schedule（排期）----
     schedule = project.get("schedule")
     if not isinstance(schedule, dict):
         schedule = {}
@@ -191,6 +200,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
         checks["schedule"] = False
         _add_violation(violations, "schedule", "warning", "MISSING_BUFFER", "活动流程未预留正数缓冲时间")
 
+    # 校验排期项：每个环节必须包含起止时间，且与方案中定义的人数一致
     stage_ids = {str(stage.get("stage_id")) for stage in stages if isinstance(stage, dict)}
     stage_staff = {
         str(stage.get("stage_id")): stage.get("staff_required")
@@ -215,6 +225,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
         checks["schedule"] = False
         _add_violation(violations, "schedule", "error", "SCHEDULE_STAGE_MISMATCH", "计划环节与排期环节不一致")
 
+    # ---- 第 5 部分：校验 staffing（人员安排）----
     available_staff = brief.get("available_staff")
     if available_staff is not None and (
         isinstance(available_staff, bool)
@@ -236,6 +247,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
             checks["staffing"] = False
             _add_violation(violations, "staffing", "error", "STAFF_CAPACITY_EXCEEDED", f"环节 {stage_id} 需要 {staff} 人，超过可用人数 {available_staff}")
 
+    # ---- 第 6 部分：校验 publicity（宣传内容）----
     publicity = project.get("publicity")
     if not isinstance(publicity, dict) or not any(
         str(publicity.get(key, "")).strip()
@@ -244,6 +256,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
         checks["publicity"] = False
         _add_violation(violations, "publicity", "error", "MISSING_PUBLICITY", "至少需要一种宣传内容")
 
+    # ---- 第 7 部分：校验 outputs（输出文件）----
     outputs = project.get("outputs")
     expected_outputs = {
         "event_project": "event_project.json",
@@ -259,6 +272,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
                 checks["outputs"] = False
                 _add_violation(violations, "outputs", "error", "INVALID_OUTPUT_PATH", f"{key} 的输出路径必须是 {expected_path}")
 
+    # 最终判断：存在任意一条 severity 为 error 的违规即视为校验不通过
     valid = not any(item["severity"] == "error" for item in violations)
     return {
         "valid": valid,
@@ -269,6 +283,7 @@ def validate_project_data(project: dict[str, Any]) -> dict[str, Any]:
 
 
 def _validate_project(project: dict[str, Any]) -> str:
+    """项目校验工具的执行入口：包装 validate_project_data 并序列化为 JSON 字符串。"""
     try:
         result = validate_project_data(project)
     except ValueError as exc:
@@ -276,6 +291,7 @@ def _validate_project(project: dict[str, Any]) -> str:
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
+# 创建项目校验工具注册
 validate_project_tool = Tool(
     name="validate_project",
     description=(

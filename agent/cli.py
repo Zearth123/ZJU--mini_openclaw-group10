@@ -5,14 +5,15 @@
   python -m agent.cli "创建 hello.py 并运行"  # Day5 起：真正跑任务（v1 在 Day6）
 """
 from __future__ import annotations
-import argparse
-import sys
+import argparse     # 命令行参数解析
+import sys          # 系统退出、标准输入判断
 
-from tools.base import build_default_registry
-from agent.memory import Memory
-from agent.prompts import SYSTEM_PROMPT
+from tools.base import build_default_registry   # 创建默认工具注册表（13 个内置工具）
+from agent.memory import Memory                  # 持久化记忆
+from agent.prompts import SYSTEM_PROMPT          # 系统提示词
 
 
+# 自检函数：验证所有模块导入和基本功能是否正常
 def selfcheck() -> int:
     print("== mini-OpenClaw 自检 ==")
     ok = True
@@ -45,11 +46,14 @@ def selfcheck() -> int:
     return 0 if ok else 1
 
 
+# 主入口函数：解析命令行参数，装配运行环境，启动 Agent 循环
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="mini-openclaw")
     p.add_argument("task", nargs="?", help="要让 agent 完成的任务（自然语言）")
     p.add_argument("--image", action="append", default=[], metavar="PATH",
                    help="随任务发送的图片路径；可重复指定")
+    p.add_argument("--document",action="append",default=[],metavar="PATH",help="随任务提供的 PDF 或 DOCX 文档路径；可重复指定",
+)
     p.add_argument("--selfcheck", action="store_true", help="只做骨架自检")
     p.add_argument("--trace", metavar="PATH", help="将运行轨迹写入 JSONL 文件")
     p.add_argument("--replay-trace", metavar="PATH", help="回放已有 JSONL 轨迹")
@@ -64,18 +68,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = p.parse_args(argv)
 
+    # 回放模式：不再执行 Agent，直接打印已记录的运行轨迹
     if args.replay_trace:
         from eval.tracer import replay
-        replay(args.replay_trace)
+        replay(args.replay_trace)               # 回放：逐步打印已记录的轨迹
         return 0
 
     if args.selfcheck or not args.task:
-        return selfcheck()
+        return selfcheck()                      # 自检模式或无任务时执行自检
 
-    # 真正跑任务：优先用 DeepSeek API；没配 key 时回退到 FakeBackend（离线打通管道）
+    # === 任务执行流程：装配环境 → 构建 Agent → 运行 ===
     from agent.loop import AgentLoop
-    reg = build_default_registry()
-    mcp_clients = []
+    reg = build_default_registry()                     # 1. 构建工具注册表
+    mcp_clients = []                                   # 2. 初始化 MCP 客户端列表
+    # 配置 MCP 服务器启动命令：文件系统服务器
     commands = [
     [
         "npx",
@@ -85,6 +91,7 @@ def main(argv: list[str] | None = None) -> int:
     ],
     ]
     from mcp.client import MCPClient, register_mcp_tools
+    # 逐个启动 MCP 服务器并将工具注册到工具注册表
     for command in commands:
         try:
             mcp = MCPClient(command)
@@ -93,6 +100,7 @@ def main(argv: list[str] | None = None) -> int:
             mcp_clients.append(mcp)
         except Exception as e:  # noqa
             print(f"[提示] MCP 未接入（{e}），仅用内置工具。")
+    # 初始化 LLM 后端：优先使用 DeepSeek，失败则回退到 FakeBackend
     try:
         from backend.client import DeepSeekBackend
         backend = DeepSeekBackend()                       # 需要 DEEPSEEK_API_KEY
@@ -100,25 +108,31 @@ def main(argv: list[str] | None = None) -> int:
         from backend.fake_backend import FakeBackend
         print(f"[提示] 未启用真后端（{e}），回退 FakeBackend。配置 DEEPSEEK_API_KEY 后即用真模型。")
         backend = FakeBackend()
+    # 加载技能模块：从技能目录加载 SKILL.md 文件
     from skills.loader import load_skills, skills_catalog
     skills = load_skills()
+    # 组装系统提示词：基础提示 + 技能目录 + 项目记忆
     system = SYSTEM_PROMPT + "\n\n# 可用 Skills（相关时按其流程执行）\n" + skills_catalog(skills)
 
+    # 召回项目记忆：从 MEMORY.md 读取历史信息并注入系统提示
     recalled = Memory("MEMORY.md").recall()
     if recalled.strip():
         system += "\n\n# 关于本项目 / 用户的已知记忆（相关时遵循）\n" + recalled
 
+    # 初始化轨迹记录器（用于调试和评估回放）
     tracer = None
     if args.trace:
         from eval.tracer import Tracer
         tracer = Tracer(args.trace)
 
+    # 用户确认回调函数：请求用户批准需确认的工具调用
     def confirm(name: str, arguments: dict) -> bool:
         if not sys.stdin.isatty():
             return False
         answer = input(f"允许执行 {name} {arguments}? [y/N] ").strip().casefold()
         return answer in {"y", "yes"}
 
+    # 装配 Agent 主循环并执行任务
     agent = AgentLoop(
         backend,
         reg,
@@ -128,9 +142,10 @@ def main(argv: list[str] | None = None) -> int:
         tracer=tracer,
         confirm_callback=confirm,
     )
-    print(agent.run(args.task, image_paths=args.image))
+    print(agent.run(args.task, image_paths=args.image, document_paths=args.document))
     return 0
 
 
+# 脚本入口：当直接运行 python agent/cli.py 时调用 main 函数
 if __name__ == "__main__":
     sys.exit(main())

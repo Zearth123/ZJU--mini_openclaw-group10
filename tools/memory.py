@@ -1,17 +1,17 @@
 """长期记忆写入工具（Day 7）。"""
-from __future__ import annotations
+from __future__ import annotations  # 延迟求值类型注解
 
-from agent.memory import Memory
-from .base import Tool
+from agent.memory import Memory  # 持久化记忆管理器
+from .base import Tool  # 工具基类
 
 
 def _remember(note: str) -> str:
-    """把一条长期有效的信息追加到 MEMORY.md。"""
+    """将用户指定的长期记忆写入 MEMORY.md 文件，供跨会话持久化使用。"""
     note = note.strip()
     if not note:
         return "[失败] 记忆内容不能为空"
 
-    Memory("MEMORY.md").write(note)
+    Memory("MEMORY.md").write(note)  # 追加写入到 MEMORY.md
     return "已记住：" + note
 
 

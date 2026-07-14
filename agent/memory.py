@@ -1,8 +1,10 @@
-import json
-from pathlib import Path
+import json             # JSON 序列化/反序列化
+from pathlib import Path  # 文件路径操作
 
 
 class Memory:
+    """简单的持久化记忆类：以追加方式写入 MEMORY.md 文件，保存项目/用户记忆。"""
+
     def __init__(self, path="MEMORY.md"):
         self.path = Path(path)
 
@@ -17,7 +19,7 @@ class Memory:
 
 
 class KVMemory:
-    """可覆盖、可删除的结构化项目记忆。"""
+    """可覆盖、可删除的结构化项目记忆（基于 JSON 文件的键值存储）。"""
 
     def __init__(self, path="memory.json"):
         self.path = Path(path)
@@ -28,6 +30,7 @@ class KVMemory:
         )
 
     def _save(self):
+        """将内存数据持久化到 JSON 文件。"""
         self.path.write_text(
             json.dumps(self.data, ensure_ascii=False, indent=2),
             encoding="utf-8",

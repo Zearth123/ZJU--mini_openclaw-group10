@@ -11,38 +11,80 @@ MCP（Model Context Protocol）让工具集从"写死在代码里"变成"可插�
 然后在 agent/loop 里，把这些 MCP 工具**透明合并**进内置 ToolRegistry。
 """
 from __future__ import annotations
-import json
-import subprocess
+import json  # JSON-RPC 消息的序列化和反序列化
+import subprocess  # 启动 MCP server 子进程（stdio transport）
 from typing import Any
 
-from tools.base import Tool, ToolRegistry
+from tools.base import Tool, ToolRegistry  # 工具基类和注册表，用于透明合并 MCP 工具
 
 
 class MCPClient:
+    """MCP（Model Context Protocol）客户端：通过 stdio 与 MCP server 通信，拉取并调用远程工具。
+
+    工作流程：
+        1. 启动 server 子进程（stdio transport）
+        2. initialize 握手
+        3. tools/list 拉取 server 暴露的工具
+        4. tools/call 将某次调用转发给 server，拿回结果
+    """
+
     def __init__(self, command: list[str]):
+        """初始化 MCP 客户端。
+
+        参数:
+            command: 启动 MCP server 的命令列表（如 ["python", "echo_server.py"]）
+        """
         self.command = command
-        self.proc: subprocess.Popen | None = None
-        self._id = 0
+        self.proc: subprocess.Popen | None = None  # server 子进程引用
+        self._id = 0  # JSON-RPC 请求 ID 自增计数器
 
     def start(self) -> None:
+        """启动 MCP server 子进程，通过 stdin/stdout 通信，并执行 initialize 握手。"""
         # TODO[Day5] 启动子进程，stdin/stdout 接管，做 initialize 握手
         raise NotImplementedError("Day6：实现 stdio transport + initialize")
 
     def _rpc(self, method: str, params: dict | None = None) -> Any:
+        """发送一条 JSON-RPC 请求，等待并返回对应响应。
+
+        参数:
+            method: JSON-RPC 方法名
+            params: 请求参数
+
+        返回:
+            服务端返回的 result 字段
+        """
         # TODO[Day5] 发一条 JSON-RPC 请求（带自增 id），读回对应响应
         raise NotImplementedError("Day6：实现 JSON-RPC 收发")
 
     def list_tools(self) -> list[dict]:
+        """调用 tools/list，返回 MCP server 暴露的工具描述列表。"""
         # TODO[Day5] 调 tools/list，返回工具描述列表
         raise NotImplementedError("Day6：实现 tools/list")
 
     def call_tool(self, name: str, arguments: dict) -> str:
+        """调用 MCP server 上的某个工具，返回结果文本。
+
+        参数:
+            name: 工具名称
+            arguments: 工具参数
+
+        返回:
+            工具执行结果文本
+        """
         # TODO[Day5] 调 tools/call，返回结果文本
         raise NotImplementedError("Day6：实现 tools/call")
 
 
 def register_mcp_tools(registry: ToolRegistry, client: MCPClient) -> None:
-    """把一个 MCP server 的工具包装成内置 Tool 并注册，实现透明合并。"""
+    """把一个 MCP server 的工具包装成内置 Tool 并注册，实现透明合并。
+
+    MCP 工具会被自动添加 "mcp__" 前缀以避免和内置工具撞名。
+    这样在 agent 循环中，MCP 工具与内置工具可以统一调度，无需区分来源。
+
+    参数:
+        registry: 工具注册表（内置工具集）
+        client: 已连接的 MCP 客户端
+    """
     for spec in client.list_tools():
         name = spec["name"]
         registry.register(Tool(
