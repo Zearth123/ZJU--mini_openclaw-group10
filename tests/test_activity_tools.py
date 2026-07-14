@@ -8,7 +8,7 @@ from tools.activity_budget import calculate_budget_data
 from tools.activity_schedule import build_schedule_data
 from tools.activity_validate import validate_project_data
 from tools.base import build_default_registry
-
+import json
 
 class BudgetTests(unittest.TestCase):
     def test_budget_with_reserve(self):
@@ -167,7 +167,119 @@ class IntegrationTests(unittest.TestCase):
         for name in ("calculate_budget", "build_schedule", "validate_project"):
             self.assertIn(name, registry.names())
             self.assertEqual(check(name, {}, Path.cwd()), "allow")
+    def test_budget_tool_returns_json_string(self):
+        registry = build_default_registry()
+        tool = registry.get("calculate_budget")
 
+        self.assertIsNotNone(tool)
+
+        raw = tool.run(
+            budget_limit=1000,
+            reserve_ratio=0.1,
+            items=[
+                {
+                    "name": "签到材料",
+                    "category": "material",
+                    "unit_price": 20,
+                    "quantity": 2,
+                    "priority": "required",
+                    "price_status": "confirmed",
+                }
+            ],
+        )
+
+        self.assertIsInstance(raw, str)
+
+        result = json.loads(raw)
+        self.assertEqual(result["subtotal"], 40)
+        self.assertEqual(result["reserve"], 4)
+        self.assertEqual(result["total"], 44)
+        self.assertEqual(result["remaining"], 956)
+    def test_schedule_tool_returns_json_string(self):
+        registry = build_default_registry()
+        tool = registry.get("build_schedule")
+
+        raw = tool.run(
+            event_start="13:30",
+            event_end="16:30",
+            buffer_minutes=15,
+            stages=[
+                {
+                    "stage_id": "stage-001",
+                    "name": "签到",
+                    "duration_minutes": 20,
+                    "dependencies": [],
+                    "staff_required": 2,
+                }
+            ],
+        )
+
+        result = json.loads(raw)
+
+        self.assertEqual(result["event_start"], "13:30")
+        self.assertEqual(result["event_end"], "16:30")
+        self.assertTrue(result["fits_time_window"])
+        self.assertEqual(result["items"][0]["stage_id"], "stage-001")
+    def test_validation_tool_returns_json_string(self):
+        registry = build_default_registry()
+        tool = registry.get("validate_project")
+
+        raw = tool.run(project=valid_project())
+        result = json.loads(raw)
+
+        self.assertIsInstance(raw, str)
+        self.assertTrue(result["valid"], result["violations"])
+        self.assertIn("violations", result)
+    def test_budget_tool_invalid_arguments_return_error_json(self):
+        registry = build_default_registry()
+        tool = registry.get("calculate_budget")
+
+        raw = tool.run(
+            budget_limit=100,
+            items=[
+                {
+                    "name": "错误项目",
+                    "category": "material",
+                    "unit_price": -1,
+                    "quantity": 1,
+                }
+            ],
+        )
+
+        result = json.loads(raw)
+
+        self.assertFalse(result["ok"])
+        self.assertIn("error", result)
+
+    def test_schedule_tool_cycle_returns_error_json(self):
+        registry = build_default_registry()
+        tool = registry.get("build_schedule")
+
+        raw = tool.run(
+            event_start="13:30",
+            event_end="16:30",
+            stages=[
+                {
+                    "stage_id": "a",
+                    "name": "A",
+                    "duration_minutes": 10,
+                    "dependencies": ["b"],
+                    "staff_required": 1,
+                },
+                {
+                    "stage_id": "b",
+                    "name": "B",
+                    "duration_minutes": 10,
+                    "dependencies": ["a"],
+                    "staff_required": 1,
+                },
+            ],
+        )
+
+        result = json.loads(raw)
+
+        self.assertFalse(result["ok"])
+        self.assertIn("循环", result["error"])
 
 if __name__ == "__main__":
     unittest.main()
