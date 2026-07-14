@@ -57,19 +57,47 @@ class ToolRegistry:
 
 
 def build_default_registry() -> ToolRegistry:
-    """组装内置工具。随课程推进逐步取消注释。"""
+    """组装 mini-OpenClaw 的内置工具。"""
     reg = ToolRegistry()
-    # TODO[Day4] 取消注释并实现：
-    # from .fs import read_tool, write_tool
-    # from .shell import bash_tool
-    # for t in (read_tool, write_tool, bash_tool):
-    #     reg.register(t)
-    #
-    # TODO[Day4] 再加入完整工具集（→ v1 里程碑）：
-    # from .more_tools import edit_tool, grep_tool, glob_tool
-    # for t in (edit_tool, grep_tool, glob_tool):
-    #     reg.register(t)
-    #
-    # TODO[Day4] 再加入：
-    # from .more_tools import web_fetch_tool, task_list_tool
+
+    # 通用文件与执行工具
+    from .fs import read_tool, write_tool
+    from .shell import bash_tool
+    from .more_tools import (
+        edit_tool,
+        grep_tool,
+        glob_tool,
+        web_fetch_tool,
+    )
+
+    # 记忆工具
+    from .memory import remember_tool
+
+    # Todo 规划工具
+    from .planning import todo_write_tool, update_todo_tool
+
+    # 活动策划确定性工具
+    from .activity_budget import calculate_budget_tool
+    from .activity_schedule import build_schedule_tool
+    from .activity_validate import validate_project_tool
+
+    tools = [
+        read_tool,
+        write_tool,
+        bash_tool,
+        edit_tool,
+        grep_tool,
+        glob_tool,
+        web_fetch_tool,
+        remember_tool,
+        todo_write_tool,
+        update_todo_tool,
+        calculate_budget_tool,
+        build_schedule_tool,
+        validate_project_tool,
+    ]
+
+    for tool in tools:
+        reg.register(tool)
+
     return reg
