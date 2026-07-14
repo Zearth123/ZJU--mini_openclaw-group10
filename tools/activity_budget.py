@@ -1,18 +1,18 @@
 """活动预算计算 Tool：只做确定性计算，不替 Agent 决定采购内容。"""
-from __future__ import annotations
+from __future__ import annotations  # 延迟求值类型注解
 
-import json
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from typing import Any
+import json  # JSON 序列化，确保中文字符不被转义
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP  # 高精度金额计算
+from typing import Any  # 通用类型提示
 
-from .base import Tool
+from .base import Tool  # 工具基类
 
 
-CENT = Decimal("0.01")
+CENT = Decimal("0.01")  # 金额精度常量：保留两位小数
 
 
 def _money(value: Any, field: str) -> Decimal:
-    """把输入转换为非负金额，并统一保留两位小数。"""
+    """将输入转换为非负金额 Decimal，统一保留两位小数，四舍五入。"""
     try:
         number = Decimal(str(value))
     except (InvalidOperation, ValueError, TypeError) as exc:
@@ -23,6 +23,7 @@ def _money(value: Any, field: str) -> Decimal:
 
 
 def _ratio(value: Any) -> Decimal:
+    """校验备用金比例，必须在 0 到 1 之间（含边界）。"""
     try:
         ratio = Decimal(str(value))
     except (InvalidOperation, ValueError, TypeError) as exc:
@@ -33,6 +34,7 @@ def _ratio(value: Any) -> Decimal:
 
 
 def _quantity(value: Any) -> Decimal:
+    """校验数量为非负有限数字。"""
     try:
         quantity = Decimal(str(value))
     except (InvalidOperation, ValueError, TypeError) as exc:
@@ -43,7 +45,7 @@ def _quantity(value: Any) -> Decimal:
 
 
 def _json_number(value: Decimal) -> int | float:
-    """整数金额输出 int，其余输出两位小数 float，保持 JSON 易读。"""
+    """将 Decimal 转为 JSON 友好格式：整数值输出 int，其余输出两位小数 float。"""
     if value == value.to_integral_value():
         return int(value)
     return float(value)
@@ -54,17 +56,18 @@ def calculate_budget_data(
     items: list[dict[str, Any]],
     reserve_ratio: Any = 0.1,
 ) -> dict[str, Any]:
-    """计算预算明细、分类合计、备用金、总额和余额。"""
+    """核心预算计算逻辑：逐项校验并计算小计、分类汇总、备用金、总额和余额。"""
     limit = _money(budget_limit, "budget_limit")
     ratio = _ratio(reserve_ratio)
     if not isinstance(items, list):
         raise ValueError("items 必须是数组")
 
-    normalized_items: list[dict[str, Any]] = []
-    category_totals: dict[str, Decimal] = {}
-    warnings: list[str] = []
+    normalized_items: list[dict[str, Any]] = []  # 规整化后的预算项列表
+    category_totals: dict[str, Decimal] = {}     # 按分类汇总金额
+    warnings: list[str] = []                     # 计算过程中产生的警告信息
 
     for index, raw in enumerate(items, 1):
+        # 校验每项预算的基本字段：name、category、priority、price_status
         if not isinstance(raw, dict):
             raise ValueError(f"items[{index - 1}] 必须是对象")
 
@@ -88,6 +91,7 @@ def calculate_budget_data(
         subtotal = (unit_price * quantity).quantize(CENT, rounding=ROUND_HALF_UP)
         category_totals[category] = category_totals.get(category, Decimal("0")) + subtotal
 
+        # 构建规整化的预算项，保留原始扩展字段
         item = dict(raw)
         item.update({
             "item_id": str(raw.get("item_id") or f"budget-{index:03d}"),
@@ -102,6 +106,7 @@ def calculate_budget_data(
         })
         normalized_items.append(item)
 
+        # 根据价格状态生成警告：估算价或未询价都要提醒用户
         if price_status == "pending_quote":
             warnings.append(f"预算项“{name}”尚未询价")
         elif price_status == "estimated":
@@ -115,6 +120,7 @@ def calculate_budget_data(
     if over_budget:
         warnings.append(f"预算超出上限 {_json_number(total - limit)} 元")
 
+    # 组装最终返回结果：预算限额、备用金比例、预算明细、分类汇总及各汇总计算
     return {
         "budget_limit": _json_number(limit),
         "reserve_ratio": float(ratio),
@@ -133,6 +139,7 @@ def calculate_budget_data(
 
 
 def _calculate_budget(**kwargs: Any) -> str:
+    """预算计算工具的执行入口：包装 calculate_budget_data 并序列化为 JSON 字符串。"""
     try:
         result = calculate_budget_data(**kwargs)
     except ValueError as exc:

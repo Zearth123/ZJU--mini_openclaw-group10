@@ -1,7 +1,27 @@
+# Python 缓存
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+
+# 虚拟环境和密钥
 .venv/
+.env
+
+# 本地配置
+.claude/settings.local.json
+
+# Windows 附加文件
+*:Zone.Identifier
+
+# 模型及构建产物
 out-*/
 *.bin
 *.gguf
+
+# 系统文件
 .DS_Store
+
+# Agent 运行时生成的数据
+memory.json
+event_project.json
+activity_plan.md

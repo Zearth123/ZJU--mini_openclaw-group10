@@ -10,24 +10,30 @@ from __future__ import annotations
 from typing import Any
 
 
+# ============================================================
+# 假后端：未配置 API Key 时的离线占位实现
+# 与 DeepSeekBackend 实现相同的 chat() 接口，方便切换
+# ============================================================
 class FakeBackend:
     """规则驱动的假模型：只为打通管道，不要当真。"""
 
+    # 模拟 chat 接口：根据最后一条消息内容做简单规则判断
     def chat(self, messages: list[dict[str, Any]], tools: list[dict] | None = None) -> dict[str, Any]:
         last = messages[-1]["content"] if messages else ""
         last_text = self._text_content(last)
-        # 如果上一条是工具结果（observation），就给最终答复
+        # 规则1：如果上一条是工具结果（observation），就假装给出最终答复
         if messages and messages[-1].get("role") == "tool":
             return {"role": "assistant", "content": f"[FakeBackend] 已根据工具结果完成：{last_text[:60]}", "tool_calls": []}
 
-        # 否则，如果有可用工具且用户像是要做事，假装调一个工具
+        # 规则2：如果有可用工具且用户输入含关键词，假装调用第一个工具
         if tools and any(k in last_text for k in ("文件", "运行", "file", "run", "hello")):
             name = tools[0]["function"]["name"]
             return {
                 "role": "assistant",
-                "content": "",
-                "tool_calls": [{"name": name, "arguments": {}}],
+                "content": "",                                          # 空 content 表示模型"正在调用工具"
+                "tool_calls": [{"name": name, "arguments": {}}],       # 假装调用工具（参数为空）
             }
+        # 规则3：兜底——发回一条欢迎/提示消息
         return {"role": "assistant", "content": "[FakeBackend] 你好，我是离线占位后端。配好 DEEPSEEK_API_KEY 即用真模型。", "tool_calls": []}
 
     @staticmethod
