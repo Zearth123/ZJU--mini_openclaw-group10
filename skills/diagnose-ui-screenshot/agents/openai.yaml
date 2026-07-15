@@ -1,0 +1,4 @@
+interface:
+  display_name: "Screenshot UI Diagnostics"
+  short_description: "Diagnose visual UI defects from screenshots and verify fixes"
+  default_prompt: "Use $diagnose-ui-screenshot to inspect this screenshot, identify the UI defect, and propose a verified fix."

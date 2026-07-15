@@ -1,0 +1,71 @@
+{
+  "rubric_name": "活动方案质量评分标准",
+  "max_score": 100,
+  "pass_score": 80,
+  "dimensions": [
+    {
+      "name": "完整性",
+      "weight": 20,
+      "items": [
+        {"criterion": "有明确活动目标", "pass_if": true, "score": 3},
+        {"criterion": "有目标参与人群描述", "pass_if": true, "score": 2},
+        {"criterion": "有完整活动流程", "pass_if": true, "score": 5},
+        {"criterion": "有布置和撤场安排", "pass_if": true, "score": 3},
+        {"criterion": "有复盘模板", "pass_if": true, "score": 2},
+        {"criterion": "有执行 checklist", "pass_if": true, "score": 5}
+      ]
+    },
+    {
+      "name": "可行性",
+      "weight": 25,
+      "items": [
+        {"criterion": "活动时长与实际内容匹配", "pass_if": true, "score": 5},
+        {"criterion": "环节之间有合理衔接", "pass_if": true, "score": 5},
+        {"criterion": "有缓冲时间安排", "pass_if": true, "score": 5},
+        {"criterion": "物资清单完整可采购", "pass_if": true, "score": 5},
+        {"criterion": "场地要求明确", "pass_if": true, "score": 5}
+      ]
+    },
+    {
+      "name": "预算合理性",
+      "weight": 20,
+      "items": [
+        {"criterion": "预算分类清晰", "pass_if": true, "score": 4},
+        {"criterion": "单价和数量合理", "pass_if": true, "score": 4},
+        {"criterion": "包含应急备用金", "pass_if": true, "score": 4},
+        {"criterion": "总预算未超上限", "pass_if": true, "score": 4},
+        {"criterion": "有分类汇总", "pass_if": true, "score": 4}
+      ]
+    },
+    {
+      "name": "分工明确性",
+      "weight": 15,
+      "items": [
+        {"criterion": "每个任务有唯一负责人", "pass_if": true, "score": 5},
+        {"criterion": "负责人工作量均衡", "pass_if": true, "score": 3},
+        {"criterion": "分工与技能匹配", "pass_if": true, "score": 3},
+        {"criterion": "有明确截止时间", "pass_if": true, "score": 4}
+      ]
+    },
+    {
+      "name": "风险覆盖",
+      "weight": 10,
+      "items": [
+        {"criterion": "覆盖人员风险", "pass_if": true, "score": 2},
+        {"criterion": "覆盖场地/设备风险", "pass_if": true, "score": 2},
+        {"criterion": "覆盖物资风险", "pass_if": true, "score": 2},
+        {"criterion": "覆盖安全/天气风险", "pass_if": true, "score": 2},
+        {"criterion": "风险预案包含预防和应急措施", "pass_if": true, "score": 2}
+      ]
+    },
+    {
+      "name": "宣传准备",
+      "weight": 10,
+      "items": [
+        {"criterion": "有宣传时间线", "pass_if": true, "score": 3},
+        {"criterion": "有针对不同渠道的文案", "pass_if": true, "score": 4},
+        {"criterion": "有报名方式说明", "pass_if": true, "score": 3}
+      ]
+    }
+  ]
+}
