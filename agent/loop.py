@@ -132,8 +132,22 @@ class AgentLoop:
             before = TODO.snapshot()  # 执行前的快照，用于检测进展
             for call in tool_calls:
                 name = call["name"]
-                arguments = call.get("arguments", {})
+                arguments = dict(call.get("arguments", {}))  # 转为可变字典，后面会修改路径参数
                 tool = self.registry.get(name)
+
+                # 将工具参数中的相对文件路径解析为 workdir 内的绝对路径
+                if tool is not None:
+                    for path_key in ("path",):
+                        p = arguments.get(path_key)
+                        if isinstance(p, str) and p.strip():
+                            path = Path(p)
+                            if not path.is_absolute():
+                                arguments[path_key] = str((self.workdir / path).resolve())
+                    # 为 bash 和 glob 工具注入 workdir（参数不会暴露给模型）
+                    if name == "bash":
+                        arguments["workdir"] = str(self.workdir)
+                    if name == "glob":
+                        arguments["workdir"] = str(self.workdir)
 
                 # verbose 模式下打印工具调用信息
                 if self.verbose:

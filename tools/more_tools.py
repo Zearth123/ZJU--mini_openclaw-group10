@@ -58,9 +58,13 @@ def _grep(pattern: str, path: str = ".", max_lines: int = 100) -> str:
 
 
 # --- glob：按文件名通配模式递归查找文件，不搜索文件内容 ---
-def _glob(pattern: str, max_items: int = 100) -> str:
-    """使用 pathlib 的 rglob 按文件名模式查找文件，限制最大返回数量。"""
-    paths = [str(p) for p in Path(".").rglob(pattern) if p.is_file()]
+def _glob(pattern: str, max_items: int = 100, workdir: str | None = None) -> str:
+    """使用 pathlib 的 rglob 按文件名模式查找文件，限制最大返回数量。
+
+    workdir 由 AgentLoop 传入以支持输出目录；工具 schema 不向模型暴露该参数。
+    """
+    root = Path(workdir).resolve() if workdir else Path(".")
+    paths = [str(p) for p in root.rglob(pattern) if p.is_file()]
     if not paths:
         return f"[无匹配] pattern={pattern}"
     if len(paths) > max_items:

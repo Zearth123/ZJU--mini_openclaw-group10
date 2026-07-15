@@ -15,6 +15,7 @@ __pycache__/
 
 # 模型及构建产物
 out-*/
+run_*/
 *.bin
 *.gguf
 

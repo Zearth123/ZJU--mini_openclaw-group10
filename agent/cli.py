@@ -63,6 +63,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--selfcheck", action="store_true", help="只做骨架自检")
     p.add_argument("--trace", metavar="PATH", help="将运行轨迹写入 JSONL 文件")
+    p.add_argument(
+        "--output-dir", "-o",
+        default="",
+        metavar="DIR",
+        help=(
+            "为此运行创建独立输出目录。"
+            "设为 . (点) 时自动生成 run_YYYYMMDD_HHMMSS；"
+            "否则使用指定的目录名。"
+            "示例：-o . '创建 hello.py' → 自动目录"
+        ),
+    )
     p.add_argument("--replay-trace", metavar="PATH", help="回放已有 JSONL 轨迹")
     p.add_argument(
         "--auto-approve",
@@ -84,6 +95,20 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.selfcheck or not args.task:
         return selfcheck()                      # 自检模式或无任务时执行自检
+
+    # === 输出目录：处理 --output-dir 参数，创建独立工作目录 ===
+    if args.output_dir:
+        from datetime import datetime
+        dir_name = (
+            f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            if args.output_dir == "."
+            else args.output_dir
+        )
+        workdir = Path(dir_name).resolve()
+        workdir.mkdir(parents=True, exist_ok=True)
+        print(f"[output] 输出目录：{workdir}", file=sys.stderr)
+    else:
+        workdir = Path(".").resolve()
 
     # === 任务执行流程：装配环境 → 构建 Agent → 运行 ===
     from agent.loop import AgentLoop
@@ -183,11 +208,19 @@ def main(argv: list[str] | None = None) -> int:
     if recalled.strip():
         system += "\n\n# 关于本项目 / 用户的已知记忆（相关时遵循）\n" + recalled
 
+    # 告知模型当前运行的输出目录（方便它理解文件的相对位置）
+    if args.output_dir:
+        system += f"\n\n# 当前运行信息\n输出目录：{workdir.name}/（你在此目录下读写文件，无需在路径中写上目录名）"
+
     # 初始化轨迹记录器（用于调试和评估回放）
     tracer = None
     if args.trace:
         from eval.tracer import Tracer
         tracer = Tracer(args.trace)
+    elif args.output_dir:
+        # 设置了输出目录但未显式指定 --trace：自动在输出目录内启用 trace
+        from eval.tracer import Tracer
+        tracer = Tracer(str(workdir / "trace.jsonl"))
 
     # 用户确认回调函数：请求用户批准需确认的工具调用
     def confirm(name: str, arguments: dict) -> bool:
@@ -205,6 +238,7 @@ def main(argv: list[str] | None = None) -> int:
         verbose=args.verbose,
         tracer=tracer,
         confirm_callback=confirm,
+        workdir=workdir,
     )
     print(
         agent.run(
