@@ -25,3 +25,11 @@ out-*/
 memory.json
 event_project.json
 activity_plan.md
+.runtime/
+web/node_modules/
+web/dist/
+
+# Per-run generated planning artifacts
+output/
+
+web/*.tsbuildinfo

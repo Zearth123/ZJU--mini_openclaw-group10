@@ -4,12 +4,13 @@
 建议最终拆成 edit.py / search.py / web.py / todo.py，再在 base.build_default_registry 注册。
 """
 from __future__ import annotations  # 延迟求值类型注解
-from .base import Tool  # 工具基类
+from .base import Tool
+from agent.output import resolve_artifact_path  # 工具基类
 import subprocess  # 子进程执行（grep）
 from pathlib import Path  # 跨平台路径操作
 from urllib.parse import urljoin, urlparse  # URL 解析与拼接
 
-from .external import wrap_external  # 外部内容安全包装
+from .external import validate_web_url, wrap_external  # 外部内容安全包装
 
 
 ALLOW_HOSTS = {"example.com", "api.deepseek.com"}  # 白名单：仅允许访问这些域名
@@ -24,14 +25,15 @@ def _url_is_allowed(url: str) -> bool:
 # 最终选择 search-replace，因为模型更容易精确生成原文片段
 def _edit(path: str, old: str = "", new: str = "") -> str:
     """在文件中将唯一出现的 old 文本替换为 new。要求 old 在文件中恰好出现一次。"""
-    with open(path, "r", encoding="utf-8") as f:
+    resolved_path = resolve_artifact_path(path)
+    with open(resolved_path, "r", encoding="utf-8") as f:
         text = f.read()
     count = text.count(old)  # 检查 old 出现的次数
     if count == 0:
         return f"[失败] 未找到待替换文本，请照抄文件原文（含缩进）。path={path}"
     if count > 1:
         return f"[失败] old 在文件中出现 {count} 次，不唯一；请扩大 old 片段使其唯一。"
-    with open(path, "w", encoding="utf-8") as f:
+    with open(resolved_path, "w", encoding="utf-8") as f:
         f.write(text.replace(old, new, 1))  # 只替换第一次出现
     return f"已在 {path} 完成 1 处替换。"
 
@@ -75,8 +77,7 @@ def _web_fetch(url: str, max_tokens: int = 2000) -> str:
     from markdownify import markdownify as md  # HTML 转 markdown
     from agent.context import truncate_observation  # 按 token 预算截断文本
 
-    if not _url_is_allowed(url):
-        return f"[出站白名单] 拒绝访问未授权地址：{url}"
+    validate_web_url(url)
 
     # 手动处理重定向：follow_redirects=True 会在检查最终 URL 前就访问恶意域名。
     # 手动检查每次重定向的目标是否仍在白名单内。
@@ -88,8 +89,7 @@ def _web_fetch(url: str, max_tokens: int = 2000) -> str:
             if not location:
                 return "[web_fetch] 重定向响应缺少 Location"
             next_url = urljoin(current_url, location)  # 处理相对 URL
-            if not _url_is_allowed(next_url):
-                return f"[出站白名单] 拒绝重定向到未授权地址：{next_url}"
+            validate_web_url(next_url)
             current_url = next_url
             continue
         resp.raise_for_status()

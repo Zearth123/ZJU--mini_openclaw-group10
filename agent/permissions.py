@@ -1,22 +1,16 @@
-from pathlib import Path       # 路径解析和安全检查
+from pathlib import Path
+import shlex
+from agent.output import current_output_dir, resolve_artifact_path
 
-# 工具权限分类：只读操作
 READONLY = {"read", "grep", "glob"}
-# 工具权限分类：写入操作（需用户确认）
 WRITE    = {"write", "edit"}
-# 工具权限分类：执行操作（可能产生副作用）
 EXEC     = {"bash", "web_fetch"}
-# 工具权限分类：记忆写入
 MEMORY_WRITE = {"remember"}
-# 工具权限分类：任务规划工具
 PLANNING = {"todo_write", "update_todo"}
-# 工具权限分类：活动策划领域安全工具
 DOMAIN_SAFE = {"calculate_budget", "build_schedule", "validate_project"}
-# 危险 shell 命令片段黑名单，含此类片段直接拒绝
 DANGEROUS_COMMANDS = ("rm -rf", "mkfs", "dd if=", "format ", "del /s", "rmdir /s")
 
 
-# 检查路径是否在允许的工作目录范围内
 def _inside(path_value: object, root: Path) -> bool:
     if not isinstance(path_value, str) or not path_value.strip():
         return False
@@ -25,36 +19,131 @@ def _inside(path_value: object, root: Path) -> bool:
         path = root / path
     return path.resolve().is_relative_to(root)
 
+
+SAFE_COMMANDS = {
+    "pwd", "ls", "rg", "grep", "cat", "head", "tail", "wc", "stat",
+    "file", "sort", "uniq", "diff", "jq", "tree", "du", "sed", "find",
+}
+SAFE_GIT_SUBCOMMANDS = {
+    "status", "diff", "log", "show", "branch", "rev-parse", "ls-files",
+    "grep", "shortlog", "describe",
+}
+SHELL_OPERATORS = {"|", "&&", "||"}
+
+
+def _safe_gzh_script(segment: list[str], root: Path) -> bool:
+    program = Path(segment[0]).name
+    args = segment[1:]
+    if program in {"python", "python3"}:
+        if not args:
+            return False
+        script, script_args = args[0], args[1:]
+    else:
+        script, script_args = segment[0], args
+    script_path = Path(script)
+    if not script_path.is_absolute():
+        script_path = root / script_path
+    try:
+        relative = script_path.resolve().relative_to(root)
+    except ValueError:
+        return False
+    allowed = {
+        Path("skills/gzh-design/scripts/validate_gzh_html.py"),
+        Path("skills/gzh-design/scripts/wrap_preview.py"),
+    }
+    if relative not in allowed or len(script_args) != 1:
+        return False
+    target = Path(script_args[0])
+    if not target.is_absolute():
+        target = root / target
+    output_dir = current_output_dir()
+    return (
+        output_dir is not None
+        and target.resolve().is_relative_to(output_dir.resolve())
+        and target.suffix.casefold() == ".html"
+    )
+
+
+def _safe_shell_command(command: object, root: Path) -> bool:
+    if not isinstance(command, str) or not command.strip():
+        return False
+    command = command.replace(" 2>/dev/null", "").replace(" 2>&1", "")
+    if chr(96) in command or any(token in command for token in ("$(", ">", "<", ";", "\n", "\r")):
+        return False
+    try:
+        lexer = shlex.shlex(command, posix=True, punctuation_chars="|&")
+        lexer.whitespace_split = True
+        tokens = list(lexer)
+    except ValueError:
+        return False
+    if not tokens:
+        return False
+
+    segments: list[list[str]] = [[]]
+    for token in tokens:
+        if token in SHELL_OPERATORS:
+            if not segments[-1]:
+                return False
+            segments.append([])
+        elif token == "&":
+            return False
+        else:
+            segments[-1].append(token)
+    if not segments[-1]:
+        return False
+
+    for segment in segments:
+        program = Path(segment[0]).name
+        args = segment[1:]
+        if program == "git":
+            subcommand = next((arg for arg in args if not arg.startswith("-")), "")
+            if subcommand not in SAFE_GIT_SUBCOMMANDS:
+                return False
+        elif program == "find":
+            if any(arg in {"-delete", "-exec", "-execdir", "-ok", "-okdir", "-fls", "-fprint", "-fprint0"} for arg in args):
+                return False
+        elif program == "sed":
+            if any(arg == "-i" or arg.startswith("-i") for arg in args):
+                return False
+        elif program in {"python", "python3"} or program.endswith(".py"):
+            if not _safe_gzh_script(segment, root):
+                return False
+        elif program not in SAFE_COMMANDS:
+            return False
+    return True
+
 def check(tool: str, args: dict, workdir: Path) -> str:
-    """权限检查主函数：返回 'allow'（允许）/ 'confirm'（需用户确认）/ 'deny'（拒绝）。"""
+    """返回 'allow' / 'confirm' / 'deny'。"""
     root = workdir.resolve()
-    # 任务规划和领域工具：直接放行
     if tool in PLANNING or tool in DOMAIN_SAFE:
         return "allow"
-    # 只读文件工具：在目录内允许，越界拒绝
     if tool in {"read", "grep"}:
         return "allow" if _inside(args.get("path", "."), root) else "deny"
-    # glob 工具：拒绝绝对路径和含 .. 的路径
     if tool == "glob":
         pattern = args.get("pattern", "")
         if not isinstance(pattern, str) or not pattern.strip():
             return "deny"
         parts = Path(pattern).parts
         return "deny" if Path(pattern).is_absolute() or ".." in parts else "allow"
-    # 写入工具：在目录内需确认，越界拒绝
     if tool in WRITE:
-        return "confirm" if _inside(args.get("path"), root) else "deny"
-    # 执行工具：bash 检查危险命令，其余需确认
+        if not _inside(args.get("path"), root):
+            return "deny"
+        output_dir = current_output_dir()
+        routed = resolve_artifact_path(args.get("path"))
+        if output_dir is not None and routed.resolve().is_relative_to(output_dir):
+            return "allow"
+        return "confirm"
     if tool in EXEC:
         if tool == "bash":
-            command = str(args.get("command", "")).casefold()
-            if any(fragment in command for fragment in DANGEROUS_COMMANDS):
+            command = str(args.get("command", ""))
+            normalized = command.casefold()
+            if any(fragment in normalized for fragment in DANGEROUS_COMMANDS):
                 return "deny"
+            if _safe_shell_command(command, root):
+                return "allow"
         return "confirm"          # 执行/外传一律先确认（沙箱在步骤 2）
-    # 记忆写入：需确认
     if tool in MEMORY_WRITE:
         return "confirm"
-    # MCP 工具：读取类放行，写入类需确认
     if tool.startswith("mcp__"):
         operation = tool[5:].casefold()
         if any(word in operation for word in ("read", "list", "search")):

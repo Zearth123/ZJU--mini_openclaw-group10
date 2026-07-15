@@ -82,3 +82,37 @@ python -m pytest -q
 ```
 
 写文件、执行命令和外部访问会请求确认；`--auto-approve` 仅用于受控演示，路径越界和危险命令仍会被拒绝。
+
+
+## Web console
+
+Build and start the local React/FastAPI console:
+
+```bash
+cd web
+npm install
+npm run build
+cd ..
+
+export MINIOPENCLAW_ACCESS_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+export DEEPSEEK_API_KEY="your-key"  # optional; FakeBackend is used when absent
+python3 -m backend.web_server
+```
+
+Open `http://127.0.0.1:8000` and enter the access token. The server binds
+`0.0.0.0` by default for LAN use; set `MINIOPENCLAW_HOST=127.0.0.1` when
+LAN access is not needed. Never expose this service to the public internet.
+
+
+## Per-run outputs
+
+Every Agent run writes planning artifacts into an isolated directory:
+
+- CLI: output/YYYYMMDD-HHMMSS-<id>/
+- Web: output/<run-id>/
+
+The canonical files remain event_project.json and activity_plan.md inside
+that directory. The output directory is ignored by Git. When WECHAT_APPID and
+WECHAT_APPSECRET are configured, both CLI and Web runs register the WeChat
+MCP tools; publish_markdown can create a draft or publish the Markdown file
+from the current run directory.

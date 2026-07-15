@@ -5,7 +5,9 @@
   python -m agent.cli "创建 hello.py 并运行"  # Day5 起：真正跑任务（v1 在 Day6）
 """
 from __future__ import annotations
-import argparse     # 命令行参数解析
+import argparse
+from datetime import datetime
+import uuid     # 命令行参数解析
 import os           # 微信公众号 MCP 凭据
 import sys          # 系统退出、标准输入判断
 from pathlib import Path  # 动态定位项目根目录
@@ -197,6 +199,10 @@ def main(argv: list[str] | None = None) -> int:
         return answer in {"y", "yes"}
 
     # 装配 Agent 主循环并执行任务
+    run_name = datetime.now().strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8]
+    output_dir = project_root / "output" / run_name
+    print(f"[output] {output_dir}")
+
     agent = AgentLoop(
         backend,
         reg,
@@ -205,6 +211,7 @@ def main(argv: list[str] | None = None) -> int:
         verbose=args.verbose,
         tracer=tracer,
         confirm_callback=confirm,
+        output_dir=output_dir,
     )
     print(
         agent.run(

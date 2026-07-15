@@ -28,26 +28,27 @@ description: 当用户要求把 Markdown 文件发布到微信公众号时使用
 - 输出 HTML 文件到项目根目录（当前工作目录）
 - 记录生成的 HTML 文件路径
 
-### Step 3：读取生成的 HTML 内容
+### Step 3：校验生成的 HTML
 
-用 `read` 工具读取 gzh-design 生成的 HTML 文件内容，获取完整的 `<section>...</section>` 正文片段。
+运行 `skills/gzh-design/scripts/validate_gzh_html.py` 校验生成文件，确认正文包含完整的 `<section>...</section>` 且符合公众号限制。
 
-### Step 4：调用 MCP 创建微信草稿
+### Step 4：调用 MCP 从 HTML 文件创建微信草稿
 
-用 `mcp__create_draft` 工具，将 gzh-design 生成的 HTML 作为正文内容传入：
+优先用 `mcp__create_draft_from_html_file`，避免把大段 HTML 塞入工具参数：
 
 ```
-mcp__create_draft(
+mcp__create_draft_from_html_file(
+    file_path="output/<run-id>/wechat_article.html",
     title="文章标题",
-    content="从 HTML 文件中读取的完整 section 内容",
     author="可选作者名",
     digest="可选摘要",
-    need_open_comment=1,   # 打开评论
+    publish=false,
+    need_open_comment=1,
     only_fans_can_comment=0
 )
 ```
 
-**注意**：不要使用 `mcp__publish_markdown`（它自己转的 HTML 不如 gzh-design 精美），要用 `mcp__create_draft` 直接传入已排好版的 HTML。
+**注意**：不要使用 `mcp__publish_markdown`（它的内置转换排版较基础）。必须先用 gzh-design 生成并校验 HTML，再从 HTML 文件创建草稿。
 
 ### Step 5：可选 — 提交发布
 
@@ -67,7 +68,7 @@ mcp__create_draft(
 
 ## 相关工具
 
-- `mcp__create_draft` — 直接用 HTML 正文创建草稿（推荐）
+- `mcp__create_draft_from_html_file` — 从 gzh-design HTML 文件创建草稿（推荐）
 - `mcp__upload_image` — 上传本地图片到微信 CDN
 - `mcp__publish_draft` — 提交发布
 - `mcp__list_drafts` — 查看所有草稿

@@ -28,7 +28,7 @@ class DeepSeekBackend:
                  api_key: str | None = None,
                  base_url: str | None = None,
                  model: str | None = None,
-                 timeout: float = 60.0):
+                 timeout: float = 180.0):
         # 优先使用传入的参数，否则从环境变量读取
         self.api_key = api_key or os.environ.get("DEEPSEEK_API_KEY", "")
         self.base_url = (base_url or os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com")).rstrip("/")

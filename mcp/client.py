@@ -12,6 +12,7 @@ import time
 from typing import Any
 
 from tools.base import Tool, ToolRegistry
+from agent.output import resolve_artifact_path
 
 
 class MCPClient:
@@ -87,11 +88,19 @@ class MCPClient:
 
 
 def register_mcp_tools(registry: ToolRegistry, client: MCPClient) -> None:
+    def call(name: str, arguments: dict) -> str:
+        routed = dict(arguments)
+        for key in ("path", "file_path"):
+            value = routed.get(key)
+            if isinstance(value, str):
+                routed[key] = str(resolve_artifact_path(value))
+        return client.call_tool(name, routed)
+
     for spec in client.list_tools():
         name = spec["name"]
         registry.register(Tool(
             name=f"mcp__{name}",
             description=spec.get("description", ""),
             parameters=spec.get("inputSchema", {"type": "object", "properties": {}}),
-            run=lambda _n=name, **kw: client.call_tool(_n, kw),
+            run=lambda _n=name, **kw: call(_n, kw),
         ))

@@ -47,7 +47,12 @@ def load_skills(root: str = "skills") -> list[Skill]:
 def skills_catalog(skills: list[Skill]) -> str:
     if not skills:
         return "（暂无可用 Skills）"
-    return "\n".join(f"- {s.name}: {s.description}" for s in skills)
+    return "\n\n".join(
+        f"## Skill: {skill.name}\n"
+        f"Trigger: {skill.description}\n\n"
+        f"{skill.body}"
+        for skill in skills
+    )
 
 
 def skill_detail(skill: Skill) -> str:

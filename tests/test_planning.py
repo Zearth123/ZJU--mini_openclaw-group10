@@ -66,6 +66,19 @@ def test_multistep_task_does_not_require_todo_before_other_tools(tmp_path):
     assert "calculate_budget" in first_tool_names
 
 
+def test_bounded_stop_emits_terminal_event(tmp_path):
+    backend = ScriptedBackend([tool_call("missing", {})])
+    events = []
+    loop = AgentLoop(
+        backend, build_default_registry(), "system", max_turns=1,
+        workdir=tmp_path,
+        event_callback=lambda kind, data: events.append((kind, data)),
+    )
+    assert loop.run("bounded task")
+    assert events[-1][0] == "run_finished"
+    assert events[-1][1]["limited"] is True
+
+
 def test_loop_has_bounded_stop(tmp_path):
     backend = ScriptedBackend([
         tool_call("missing", {}),
@@ -105,3 +118,23 @@ def test_verbose_mode_prints_todo_tool_calls(tmp_path, capsys):
     assert "[tool] todo_write" in stderr
     assert "[tool] update_todo" in stderr
     assert "[x] 1 A" in stderr
+
+
+def test_loop_includes_conversation_history(tmp_path):
+    backend = ScriptedBackend([{"content": "continued", "tool_calls": []}])
+    loop = AgentLoop(backend, build_default_registry(), "system", workdir=tmp_path)
+
+    assert loop.run(
+        "按通用场景来设计",
+        history_messages=[
+            {"role": "user", "content": "设计书画社活动，40人，预算1000元"},
+            {"role": "assistant", "content": "请确认场地"},
+        ],
+    ) == "continued"
+
+    seen = backend.seen_messages[0]
+    assert [message["role"] for message in seen[:4]] == [
+        "system", "user", "assistant", "user",
+    ]
+    assert "40人" in seen[1]["content"]
+    assert seen[3]["content"] == "按通用场景来设计"

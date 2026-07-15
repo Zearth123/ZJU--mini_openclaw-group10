@@ -18,3 +18,10 @@ python-docx>=1.1      # Word 文档读取
 
 # 说明：本课程大脑走 DeepSeek API，不本地部署模型、不做 LoRA，故无需 vllm/peft/torch 等重依赖。
 # （Day2 的 nanoGPT 实验请用单独的 conda 环境安装 torch，避免污染 agent 环境。）
+
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.12
+
+# WeChat Markdown publishing
+mistune>=3.0
